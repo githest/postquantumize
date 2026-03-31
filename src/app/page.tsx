@@ -603,7 +603,6 @@ export default function App() {
             <div className="actions">
               <button className="btn-p" onClick={() => {
                 const exposedLine = raw.pubKeyExposed === true ? `\nPublic Key: EXPOSED` : '';
-                const exposedLine = raw.pubKeyExposed === true ? `\nPublic Key: EXPOSED` : '';
                 const tweet = `Just checked my wallet for quantum risk and this is what I found.\n\nQuantum Risk Score: ${result.score}/100 — ${result.riskLevel}${exposedLine}\n\nhttps://postquantumize.com/?ref=share\n@postquantumize`;
                 const encoded = encodeURIComponent(tweet);
                 window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
@@ -611,7 +610,8 @@ export default function App() {
               <button className="btn-g" onClick={() => {
                 const canvas = document.createElement('canvas');
                 canvas.width = 1200; canvas.height = 630;
-                const ctx = canvas.getContext('2d')!;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
 
                 // background
                 ctx.fillStyle = '#020a06';
