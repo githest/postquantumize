@@ -55,12 +55,12 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
   // Parse transactions safely
   const txs = Array.isArray(txData.result) ? txData.result as any[] : [];
 
-  // Parse balance safely
+  // Parse balance safely — always attempt regardless of status
   let balFmt = "0.000000";
   try {
-    if (balData.status === "1" && balData.result) {
+    if (balData.result && balData.result !== "0x") {
       const wei = parseFloat(balData.result);
-      balFmt = (wei / 1e18).toFixed(6);
+      if (!isNaN(wei)) balFmt = (wei / 1e18).toFixed(6);
     }
   } catch {
     balFmt = "0.000000";
@@ -81,14 +81,14 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
     chainName:            cfg.name,
     dataSource:           new URL(base).hostname,
     address,
-    txCount:              txData.status === "1" ? txs.length : null,
-    outgoingCount:        txData.status === "1" ? outgoing.length : null,
-    balance:              balData.status === "1" ? balFmt : null,
+    txCount:              txs.length > 0 ? txs.length : null,
+    outgoingCount:        isContract ? null : (outgoing.length > 0 ? outgoing.length : 0),
+    balance:              balFmt !== "0.000000" ? balFmt : (balData.result ? balFmt : null),
     balanceTicker:        cfg.ticker,
     contractInteractions: txs.filter((t: any) => t.input && t.input !== "0x").length,
     firstOutTxTimestamp:  firstOut ? parseInt(firstOut.timeStamp) : null,
     firstOutTxHash:       firstOut?.hash || null,
-    pubKeyExposed:        isContract ? false : (txData.status === "1" ? outgoing.length > 0 : null),
+    pubKeyExposed:        isContract ? false : (txs.length > 0 ? outgoing.length > 0 : null),
     isContract,
   };
 }
