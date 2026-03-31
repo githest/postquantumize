@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -17,12 +16,7 @@ export default function OGImage() {
       fontFamily: "monospace",
       position: "relative",
     }}>
-      {/* top accent */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 4, background: "#00ff6a", opacity: 0.8, display: "flex" }} />
-      {/* grid lines */}
-      <div style={{ position: "absolute", top: 0, bottom: 0, left: 600, width: 1, background: "#0d2b16", display: "flex" }} />
-      <div style={{ position: "absolute", top: 315, left: 0, right: 0, height: 1, background: "#0d2b16", display: "flex" }} />
-
       <div style={{ fontSize: 13, color: "#00c44f", letterSpacing: 4, marginBottom: 32, textTransform: "uppercase", display: "flex" }}>
         postquantumize.com · quantum vulnerability checker
       </div>
@@ -42,9 +36,7 @@ export default function OGImage() {
         <div style={{ fontSize: 13, color: "#4a6b52", padding: "8px 16px", border: "1px solid #0d2b16", display: "flex" }}>Live on-chain data</div>
         <div style={{ fontSize: 13, color: "#00c44f", padding: "8px 16px", border: "1px solid rgba(0,196,79,0.3)", background: "rgba(0,196,79,0.04)", display: "flex" }}>Free</div>
       </div>
-      {/* bottom accent */}
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: "#00ff6a", opacity: 0.2, display: "flex" }} />
-      {/* corner dots */}
       <div style={{ position: "absolute", top: 0, left: 0, width: 5, height: 5, background: "#00ff6a", display: "flex" }} />
       <div style={{ position: "absolute", top: 0, right: 0, width: 5, height: 5, background: "#00ff6a", display: "flex" }} />
     </div>,
