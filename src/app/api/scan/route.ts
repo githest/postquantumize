@@ -57,7 +57,7 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
   let isContract = false;
   try {
     const bytecode = codeData.result || "0x";
-    isContract = typeof bytecode === "string" && bytecode.startsWith("0x") && bytecode.length > 4;
+    isContract = typeof bytecode === "string" && bytecode.startsWith("0x") && bytecode.length > 100;
   } catch { isContract = false; }
 
   // Parse balance
