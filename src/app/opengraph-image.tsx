@@ -25,10 +25,10 @@ export default function OGImage() {
         <span style={{ color: "#ffffff" }}>ize</span>
       </div>
       <div style={{ fontSize: 26, color: "#b8d4be", marginBottom: 40 }}>
-        Your wallet may already be exposed.
+        Check if your crypto wallet is quantum safe.
       </div>
       <div style={{ display: "flex", fontSize: 16, color: "#00c44f", padding: "16px 24px", border: "1px solid rgba(0,196,79,0.3)", background: "rgba(0,196,79,0.04)" }}>
-        Check if your ETH, BTC or SOL wallet's public key is exposed on-chain. Free. Live blockchain data.
+        Paste any ETH, BTC or SOL address — see if your public key is exposed on-chain. Free.
       </div>
       <div style={{ display: "flex", gap: 24, marginTop: 40 }}>
         <div style={{ fontSize: 13, color: "#4a6b52", padding: "8px 16px", border: "1px solid #0d2b16" }}>ETH · BTC · SOL · L2</div>
