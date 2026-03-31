@@ -492,7 +492,7 @@ export default function App() {
 
         {/* ── RESULT ── */}
         {result && raw && (
-          <div className="result">
+          <div className="result" id="result-card">
 
             <div className={`status-banner banner-${rl}`}>
               <div>
@@ -602,11 +602,22 @@ export default function App() {
 
             <div className="actions">
               <button className="btn-p" onClick={() => {
-                const tweet = `Just checked my wallet on postquantumize.com\n\nQuantum Risk: ${result.score}/100 (${result.riskLevel})\nPublic Key: ${raw.pubKeyExposed===true?"EXPOSED":raw.pubKeyExposed===false?"HIDDEN":"UNKNOWN"}\nTxs: ${raw.txCount??'?'} · Outgoing: ${raw.outgoingCount??'?'}\n\nGoogle dropped research today: ECDLP-256 may break with ~500K qubits.\nCheck yours → postquantumize.com\n\n#PostQuantum #CryptoSecurity`;
+                const tweet = `Just checked my wallet on postquantumize.com\n\nQuantum Risk: ${result.score}/100 (${result.riskLevel})\nPublic Key: ${raw.pubKeyExposed===true?"EXPOSED":raw.pubKeyExposed===false?"HIDDEN":"UNKNOWN"}\nTxs: ${raw.txCount??'?'} · Outgoing: ${raw.outgoingCount??'?'}\n\nCheck yours → postquantumize.com\n\n@postquantumize\n#PostQuantum #CryptoSecurity`;
                 const encoded = encodeURIComponent(tweet);
                 window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
               }}>Share on X</button>
-              <button className="btn-g" onClick={reset}>Check Another Wallet</button>
+              <button className="btn-g" onClick={async () => {
+                const html2canvas = (await import('html2canvas')).default;
+                const el = document.getElementById('result-card');
+                if (!el) return;
+                const canvas = await html2canvas(el, { backgroundColor: '#020a06', scale: 2, useCORS: true });
+                const url = canvas.toDataURL('image/png');
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `quantum-risk-${raw.pubKeyExposed===true?'exposed':'safe'}-postquantumize.png`;
+                a.click();
+              }}>Save as Image</button>
+              <button className="btn-g" onClick={reset}>Check Another</button>
             </div>
           </div>
         )}
