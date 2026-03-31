@@ -228,12 +228,12 @@ function calcRisk({ chain, addrData, address }: any) {
     }
     const sig = chain === "SOL" ? "Ed25519" : "ECDSA secp256k1";
     humanExplanation = pubKeyExposed === true
-      ? `This wallet has made ${addrData?.outgoingCount || "multiple"} outgoing transactions. Each one permanently broadcasts your ${sig} public key to the blockchain. A quantum computer running Shor's algorithm could derive your private key from it. Google's March 2026 research estimates this becomes possible with under 500,000 physical qubits — a 20x reduction from prior estimates. The threat isn't immediate, but migrating funds to a fresh wallet costs nothing and takes minutes.`
+      ? `This wallet has made ${addrData?.outgoingCount || "multiple"} outgoing transactions. Each one permanently broadcasts your ${sig} public key to the blockchain. A quantum computer running Shor's algorithm could derive your private key from it. CRQC research estimates this becomes possible with under 500,000 physical qubits. The threat isn't immediate, but migrating funds to a fresh wallet costs nothing and takes minutes.`
       : `This wallet has never sent a transaction, so your ${sig} public key has never been broadcast on-chain. You're in the safer group. The moment you send any transaction, your public key is permanently recorded. Treat this address as receive-only until post-quantum cryptography standards are finalized for your chain.`;
     findings = pubKeyExposed === true ? [
       { icon:"🚨", text:`<strong>Public key permanently on-chain.</strong> Present in every outgoing transaction signature. Cannot be removed.` },
       { icon:"⚠️", text:`<strong>${sig} is quantum-vulnerable.</strong> Shor's algorithm can derive a private key from a public key on a sufficiently large quantum computer.` },
-      { icon:"⚡", text:"<strong>Google (March 31, 2026):</strong> Under 500,000 physical qubits needed to break ECDLP-256 — a 20x reduction from prior estimates." },
+      { icon:"⚡", text:"<strong>CRQC Research (2026):</strong> Under 500,000 physical qubits estimated to break ECDLP-256." },
       { icon:"✅", text:"<strong>No immediate threat.</strong> Operational CRQCs at this scale don't exist yet. You have time — but the window may be shorter than expected." },
       { icon:"🔧", text:"<strong>Action:</strong> Generate a fresh wallet (new seed phrase), transfer all assets, and never transact from this address again." },
     ] : [
@@ -253,7 +253,7 @@ function calcRisk({ chain, addrData, address }: any) {
       score = 42 + (pubKeyExposed ? 28 : 0) - (address.startsWith("bc1p") ? 5 : 0);
     }
     humanExplanation = pubKeyExposed === true
-      ? `This Bitcoin address has spent funds, revealing your public key in the spending transaction. Google's 2026 research estimates under 500,000 physical qubits could derive your private key. Moving remaining funds to a fresh address that has never spent is your best near-term protection.`
+      ? `This Bitcoin address has spent funds, revealing your public key in the spending transaction. Recent CRQC research estimates under 500,000 physical qubits could derive your private key. Moving remaining funds to a fresh address that has never spent is your best near-term protection.`
       : `This Bitcoin address has not spent any UTXOs, so your public key remains hidden inside the address hash. Keep this as cold storage and never spend directly from it until post-quantum Bitcoin signature schemes are finalized.`;
     findings = [
       { icon: pubKeyExposed === true ? "🚨" : "✅", text: pubKeyExposed === true ? "<strong>Public key exposed via spending transaction.</strong> Permanently visible on-chain." : "<strong>Public key hidden.</strong> UTXO unspent — key not yet revealed." },
@@ -275,7 +275,7 @@ const makeSteps = (chain: string) => [
   { id:"fetch",  label:"Fetching transaction history",  src: chain==="BTC" ? "mempool.space" : chain==="SOL" ? "Helius API" : "Etherscan API" },
   { id:"pubkey", label:"Checking public key exposure",  src:"On-chain analysis" },
   { id:"risk",   label:"Running quantum risk model",    src:"ECDSA / Ed25519 model" },
-  { id:"score",  label:"Generating vulnerability report", src:"Google 2026 estimates" },
+  { id:"score",  label:"Generating vulnerability report", src:"CRQC 2026 estimates" },
 ];
 
 function timeAgo(ts: number) {
@@ -603,7 +603,8 @@ export default function App() {
             <div className="actions">
               <button className="btn-p" onClick={() => {
                 const exposedLine = raw.pubKeyExposed === true ? `\nPublic Key: EXPOSED` : '';
-                const tweet = `Just checked my wallet for quantum risk and this is what I found.\n\nQuantum Risk Score: ${result.score}/100 — ${result.riskLevel}${exposedLine}\n\npostquantumize.com\n@postquantumize`;
+                const exposedLine = raw.pubKeyExposed === true ? `\nPublic Key: EXPOSED` : '';
+                const tweet = `Just checked my wallet for quantum risk and this is what I found.\n\nQuantum Risk Score: ${result.score}/100 — ${result.riskLevel}${exposedLine}\n\nhttps://postquantumize.com/?ref=share\n@postquantumize`;
                 const encoded = encodeURIComponent(tweet);
                 window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
               }}>Share on X</button>
