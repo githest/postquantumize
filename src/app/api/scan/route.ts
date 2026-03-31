@@ -41,64 +41,87 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
   const keyParam = cfg.key ? `&apikey=${cfg.key}` : "";
   const base = cfg.apiBase;
 
-  // Fetch txs, balance, and contract code check in parallel
-  const [txRes, balRes, codeRes] = await Promise.all([
-    fetch(`${base}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc${keyParam}`),
+  // Step 1: Check if contract and get balance in parallel
+  const [balRes, codeRes, txCountRes] = await Promise.all([
     fetch(`${base}?module=account&action=balance&address=${addr}&tag=latest${keyParam}`),
     fetch(`${base}?module=proxy&action=eth_getCode&address=${addr}&tag=latest${keyParam}`),
+    // Use txlistinternal count approach - get just 1 tx to check if any exist
+    fetch(`${base}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=1&sort=asc${keyParam}`),
   ]);
 
-  const txData   = await txRes.json();
-  const balData  = await balRes.json();
-  const codeData = await codeRes.json();
+  const balData      = await balRes.json();
+  const codeData     = await codeRes.json();
+  const txCountData  = await txCountRes.json();
 
-  // Parse transactions safely
-  const txs = Array.isArray(txData.result) ? txData.result as any[] : [];
-
-  // Parse balance safely — always attempt regardless of status
-  let balFmt = "0.000000";
-  try {
-    if (balData.result && balData.result !== "0x") {
-      const wei = parseFloat(balData.result);
-      if (!isNaN(wei)) balFmt = (wei / 1e18).toFixed(6);
-    }
-  } catch {
-    balFmt = "0.000000";
-  }
-
-  // Detect smart contract safely — eth_getCode returns "0x" for EOAs
-  // Etherscan proxy wraps result in a JSON-RPC response
+  // Detect smart contract
   let isContract = false;
   try {
     const bytecode = codeData.result || "0x";
-    // Must be longer than "0x" and not an error string to be a contract
-    isContract = typeof bytecode === "string" 
-      && bytecode.startsWith("0x") 
-      && bytecode.length > 4;
-  } catch {
-    isContract = false;
+    isContract = typeof bytecode === "string" && bytecode.startsWith("0x") && bytecode.length > 4;
+  } catch { isContract = false; }
+
+  // Parse balance
+  let balFmt = "0.000000";
+  try {
+    if (balData.result && !balData.result.startsWith("0x")) {
+      const wei = parseFloat(balData.result);
+      if (!isNaN(wei)) balFmt = (wei / 1e18).toFixed(6);
+    }
+  } catch { balFmt = "0.000000"; }
+
+  // If contract — return early with balance and basic info
+  if (isContract) {
+    const txs = Array.isArray(txCountData.result) ? txCountData.result : [];
+    return {
+      success: true, chain: chainKey, chainName: cfg.name,
+      dataSource: new URL(base).hostname, address,
+      txCount: txCountData.status === "1" ? null : null, // contracts use different counting
+      outgoingCount: null,
+      balance: balFmt, balanceTicker: cfg.ticker,
+      contractInteractions: null,
+      firstOutTxTimestamp: null, firstOutTxHash: null,
+      pubKeyExposed: false, isContract: true,
+    };
   }
 
-  // For EOAs: outgoing = txs sent FROM this address (key exposure)
-  // For contracts: no key exposure, but still show tx count and balance
-  const outgoing = isContract ? [] : txs.filter((t: any) => t.from?.toLowerCase() === addr);
+  // For EOAs — fetch up to 500 txs (safe limit for free tier)
+  const txRes  = await fetch(`${base}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=500&sort=asc${keyParam}`);
+  const txData = await txRes.json();
+  const txs    = Array.isArray(txData.result) ? txData.result as any[] : [];
+
+  // Also fetch total tx count separately using account info
+  const countRes  = await fetch(`${base}?module=proxy&action=eth_getTransactionCount&address=${addr}&tag=latest${keyParam}`);
+  const countData = await countRes.json();
+
+  // eth_getTransactionCount returns outgoing nonce (number of txs sent FROM this address)
+  let outgoingCount = 0;
+  try {
+    if (countData.result && countData.result !== "0x0") {
+      outgoingCount = parseInt(countData.result, 16);
+    }
+  } catch { outgoingCount = 0; }
+
+  // First outgoing tx from the fetched batch
+  const outgoing = txs.filter((t: any) => t.from?.toLowerCase() === addr);
   const firstOut = outgoing[0] || null;
 
+  // Total tx count — use nonce as source of truth for outgoing
+  // For total, use txlist count if available, otherwise estimate
+  const totalTxCount = txData.status === "1" ? 
+    (txs.length === 500 ? `500+` : String(txs.length)) : 
+    null;
+
   return {
-    success:              true,
-    chain:                chainKey,
-    chainName:            cfg.name,
-    dataSource:           new URL(base).hostname,
-    address,
-    txCount:              txs.length > 0 ? txs.length : null,
-    outgoingCount:        isContract ? null : (outgoing.length > 0 ? outgoing.length : 0),
-    balance:              balFmt !== "0.000000" ? balFmt : (balData.result ? balFmt : null),
-    balanceTicker:        cfg.ticker,
+    success: true, chain: chainKey, chainName: cfg.name,
+    dataSource: new URL(base).hostname, address,
+    txCount: txs.length > 0 ? txs.length : (outgoingCount > 0 ? outgoingCount : null),
+    outgoingCount: outgoingCount > 0 ? outgoingCount : outgoing.length,
+    balance: balFmt, balanceTicker: cfg.ticker,
     contractInteractions: txs.filter((t: any) => t.input && t.input !== "0x").length,
-    firstOutTxTimestamp:  firstOut ? parseInt(firstOut.timeStamp) : null,
-    firstOutTxHash:       firstOut?.hash || null,
-    pubKeyExposed:        isContract ? false : (txs.length > 0 ? outgoing.length > 0 : null),
-    isContract,
+    firstOutTxTimestamp: firstOut ? parseInt(firstOut.timeStamp) : null,
+    firstOutTxHash: firstOut?.hash || null,
+    pubKeyExposed: outgoingCount > 0,
+    isContract: false,
   };
 }
 
@@ -120,8 +143,7 @@ async function fetchBTC(address: string): Promise<ScanResult> {
     balance: (balSats / 1e8).toFixed(8), balanceTicker: "BTC",
     contractInteractions: null,
     firstOutTxTimestamp: null, firstOutTxHash: null,
-    pubKeyExposed: outputCount > 0,
-    isContract: false,
+    pubKeyExposed: outputCount > 0, isContract: false,
   };
 }
 
