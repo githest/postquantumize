@@ -347,7 +347,7 @@ export default function App() {
       const raw: any = await res.json();
       if (!raw.success) throw new Error(raw.error || "API returned failure");
 
-      setStep("fetch","done",`${raw.txCount ?? "?"} txs · ${raw.balance ?? "?"} ${raw.balanceTicker} · ${raw.dataSource}`);
+      setStep("fetch","done",`${raw.txCount ?? "?"}${raw.txCountCapped ? "+" : ""} txs · ${raw.balance ?? "?"} ${raw.balanceTicker} · ${raw.dataSource}`);
 
       setStep("pubkey","active"); await delay(400);
       setStep("pubkey","done",
@@ -533,7 +533,7 @@ export default function App() {
                   {raw.pubKeyExposed===true?"REVEALED":raw.pubKeyExposed===false?"HIDDEN":"UNKNOWN"}
                 </div>
               </div>
-              <div className="dc"><div className="dk">Total Transactions</div><div className="dv">{raw.txCount??'N/A'}</div></div>
+              <div className="dc"><div className="dk">Total Transactions</div><div className="dv">{raw.txCount ? `${raw.txCount}${raw.txCountCapped ? '+' : ''}` : 'N/A'}</div></div>
               <div className="dc"><div className="dk">Outgoing / Signing Txs</div>
                 <div className={`dv ${(raw.outgoingCount||0)>0?"dv-warn":"dv-safe"}`}>{raw.outgoingCount??'N/A'}</div>
               </div>
