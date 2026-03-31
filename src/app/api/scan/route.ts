@@ -8,11 +8,11 @@ const POLYGONSCAN_KEY = process.env.POLYGONSCAN_KEY || "";
 const HELIUS_KEY      = process.env.HELIUS_KEY      || "";
 
 const EVM_CHAINS: Record<string, { name: string; apiBase: string; key: string; ticker: string }> = {
-  ETH:      { name: "Ethereum",     apiBase: "https://api.etherscan.io/api",            key: ETHERSCAN_KEY,   ticker: "ETH"  },
-  BASE:     { name: "Base",         apiBase: "https://api.basescan.org/api",            key: BASESCAN_KEY,    ticker: "ETH"  },
-  ARBITRUM: { name: "Arbitrum One", apiBase: "https://api.arbiscan.io/api",             key: ARBISCAN_KEY,    ticker: "ETH"  },
-  OPTIMISM: { name: "Optimism",     apiBase: "https://api-optimistic.etherscan.io/api", key: OPTIMISM_KEY,    ticker: "ETH"  },
-  POLYGON:  { name: "Polygon",      apiBase: "https://api.polygonscan.com/api",         key: POLYGONSCAN_KEY, ticker: "MATIC"},
+  ETH:      { name: "Ethereum",     apiBase: "https://api.etherscan.io/v2/api?chainid=1",             key: ETHERSCAN_KEY,   ticker: "ETH"  },
+  BASE:     { name: "Base",         apiBase: "https://api.etherscan.io/v2/api?chainid=8453",           key: ETHERSCAN_KEY,   ticker: "ETH"  },
+  ARBITRUM: { name: "Arbitrum One", apiBase: "https://api.etherscan.io/v2/api?chainid=42161",          key: ETHERSCAN_KEY,   ticker: "ETH"  },
+  OPTIMISM: { name: "Optimism",     apiBase: "https://api.etherscan.io/v2/api?chainid=10",             key: ETHERSCAN_KEY,   ticker: "ETH"  },
+  POLYGON:  { name: "Polygon",      apiBase: "https://api.etherscan.io/v2/api?chainid=137",            key: ETHERSCAN_KEY,   ticker: "MATIC"},
 };
 
 export interface ScanResult {
@@ -40,13 +40,13 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
   const addr = address.toLowerCase();
   const keyParam = cfg.key ? `&apikey=${cfg.key}` : "";
   const base = cfg.apiBase;
+  const q = "&"; // base URL already has ?chainid= so all params use &
 
   // Step 1: Check if contract and get balance in parallel
   const [balRes, codeRes, txCountRes] = await Promise.all([
-    fetch(`${base}?module=account&action=balance&address=${addr}&tag=latest${keyParam}`),
-    fetch(`${base}?module=proxy&action=eth_getCode&address=${addr}&tag=latest${keyParam}`),
-    // Use txlistinternal count approach - get just 1 tx to check if any exist
-    fetch(`${base}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=1&sort=asc${keyParam}`),
+    fetch(`${base}${q}module=account&action=balance&address=${addr}&tag=latest${keyParam}`),
+    fetch(`${base}${q}module=proxy&action=eth_getCode&address=${addr}&tag=latest${keyParam}`),
+    fetch(`${base}${q}module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=1&sort=asc${keyParam}`),
   ]);
 
   const balData      = await balRes.json();
@@ -74,8 +74,7 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
     const txs = Array.isArray(txCountData.result) ? txCountData.result : [];
     return {
       success: true, chain: chainKey, chainName: cfg.name,
-      dataSource: new URL(base).hostname, address,
-      txCount: txCountData.status === "1" ? null : null, // contracts use different counting
+      dataSource: "api.etherscan.io",
       outgoingCount: null,
       balance: balFmt, balanceTicker: cfg.ticker,
       contractInteractions: null,
@@ -85,12 +84,12 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
   }
 
   // For EOAs — fetch up to 500 txs (safe limit for free tier)
-  const txRes  = await fetch(`${base}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=500&sort=asc${keyParam}`);
+  const txRes  = await fetch(`${base}${q}module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=500&sort=asc${keyParam}`);
   const txData = await txRes.json();
   const txs    = Array.isArray(txData.result) ? txData.result as any[] : [];
 
   // Also fetch total tx count separately using account info
-  const countRes  = await fetch(`${base}?module=proxy&action=eth_getTransactionCount&address=${addr}&tag=latest${keyParam}`);
+  const countRes  = await fetch(`${base}${q}module=proxy&action=eth_getTransactionCount&address=${addr}&tag=latest${keyParam}`);
   const countData = await countRes.json();
 
   // eth_getTransactionCount returns outgoing nonce (number of txs sent FROM this address)
@@ -113,7 +112,7 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
 
   return {
     success: true, chain: chainKey, chainName: cfg.name,
-    dataSource: new URL(base).hostname, address,
+    dataSource: "api.etherscan.io", address,
     txCount: txs.length > 0 ? txs.length : (outgoingCount > 0 ? outgoingCount : null),
     outgoingCount: outgoingCount > 0 ? outgoingCount : outgoing.length,
     balance: balFmt, balanceTicker: cfg.ticker,
