@@ -15,16 +15,15 @@ const BASESCAN_KEY    = process.env.BASESCAN_KEY    || "";
 const ARBISCAN_KEY    = process.env.ARBISCAN_KEY    || "";
 const OPTIMISM_KEY    = process.env.OPTIMISM_KEY    || "";
 const POLYGONSCAN_KEY = process.env.POLYGONSCAN_KEY || "";
-const BLOCKCHAIR_KEY  = process.env.BLOCKCHAIR_KEY  || "";
 const HELIUS_KEY      = process.env.HELIUS_KEY      || "";
 
 // ─── CHAIN CONFIG ─────────────────────────────────────────────────────────────
 const EVM_CHAINS: Record<string, { name: string; apiBase: string; key: string; ticker: string }> = {
-  ETH:      { name: "Ethereum",        apiBase: "https://api.etherscan.io/api",                   key: ETHERSCAN_KEY,   ticker: "ETH" },
-  BASE:     { name: "Base",            apiBase: "https://api.basescan.org/api",                   key: BASESCAN_KEY,    ticker: "ETH" },
-  ARBITRUM: { name: "Arbitrum One",    apiBase: "https://api.arbiscan.io/api",                    key: ARBISCAN_KEY,    ticker: "ETH" },
-  OPTIMISM: { name: "Optimism",        apiBase: "https://api-optimistic.etherscan.io/api",        key: OPTIMISM_KEY,    ticker: "ETH" },
-  POLYGON:  { name: "Polygon",         apiBase: "https://api.polygonscan.com/api",                key: POLYGONSCAN_KEY, ticker: "MATIC" },
+  ETH:      { name: "Ethereum",     apiBase: "https://api.etherscan.io/api",            key: ETHERSCAN_KEY,   ticker: "ETH" },
+  BASE:     { name: "Base",         apiBase: "https://api.basescan.org/api",            key: BASESCAN_KEY,    ticker: "ETH" },
+  ARBITRUM: { name: "Arbitrum One", apiBase: "https://api.arbiscan.io/api",             key: ARBISCAN_KEY,    ticker: "ETH" },
+  OPTIMISM: { name: "Optimism",     apiBase: "https://api-optimistic.etherscan.io/api", key: OPTIMISM_KEY,    ticker: "ETH" },
+  POLYGON:  { name: "Polygon",      apiBase: "https://api.polygonscan.com/api",         key: POLYGONSCAN_KEY, ticker: "MATIC" },
 };
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -39,9 +38,9 @@ export interface ScanResult {
   balance: string | null;
   balanceTicker: string;
   contractInteractions: number | null;
-  firstOutTxTimestamp: number | null;   // unix seconds
+  firstOutTxTimestamp: number | null;
   firstOutTxHash: string | null;
-  pubKeyExposed: boolean | null;        // null = could not determine
+  pubKeyExposed: boolean | null;
   error?: string;
 }
 
@@ -56,17 +55,17 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
 
   const [txRes, balRes] = await Promise.all([
     fetch(`${base}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=200&sort=asc${keyParam}`, { next: { revalidate: 60 } }),
-    fetch(`${base}?module=account&action=balance&address=${addr}&tag=latest${keyParam}`,                                               { next: { revalidate: 60 } }),
+    fetch(`${base}?module=account&action=balance&address=${addr}&tag=latest${keyParam}`, { next: { revalidate: 60 } }),
   ]);
 
   const txData  = await txRes.json();
   const balData = await balRes.json();
 
-  const txs       = txData.status === "1" ? txData.result as any[] : [];
-  const balWei    = balData.status === "1" ? BigInt(balData.result) : BigInt(0);
-  const balFmt    = (Number(balWei) / 1e18).toFixed(6);
-  const outgoing  = txs.filter(t => t.from?.toLowerCase() === addr);
-  const firstOut  = outgoing[0] || null;
+  const txs      = txData.status === "1" ? txData.result as any[] : [];
+  const balWei   = balData.status === "1" ? BigInt(balData.result) : BigInt(0);
+  const balFmt   = (Number(balWei) / 1e18).toFixed(6);
+  const outgoing = txs.filter(t => t.from?.toLowerCase() === addr);
+  const firstOut = outgoing[0] || null;
 
   return {
     success:              true,
@@ -85,42 +84,32 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
   };
 }
 
-// ─── BTC FETCHER (Blockchair) ─────────────────────────────────────────────────
+// ─── BTC FETCHER (mempool.space — free, no key needed) ────────────────────────
 async function fetchBTC(address: string): Promise<ScanResult> {
-  const keyParam = BLOCKCHAIR_KEY ? `?key=${BLOCKCHAIR_KEY}` : "";
   const res = await fetch(
-    `https://api.blockchair.com/bitcoin/dashboards/address/${address}${keyParam}`,
+    `https://mempool.space/api/address/${address}`,
     { next: { revalidate: 60 } }
   );
-  if (!res.ok) throw new Error(`Blockchair HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`Mempool HTTP ${res.status}`);
+  const data = await res.json();
 
-  const data    = await res.json();
-  const payload = data.data?.[address];
-  if (!payload) throw new Error("Address not found on Blockchair");
-
-  const stats       = payload.address;
-  const txs         = payload.transactions || [];
-  const outputCount = stats.output_count || 0;
-
-  // First spend tx: Blockchair lists most recent first; we want the oldest spend
-  // spending = any tx where the address was an input (i.e., sent funds)
-  const firstSpendTs = stats.first_seen_spending
-    ? Math.floor(new Date(stats.first_seen_spending).getTime() / 1000)
-    : null;
+  const txCount    = data.chain_stats.tx_count || 0;
+  const outputCount = data.chain_stats.spent_txo_count || 0;
+  const balSats    = (data.chain_stats.funded_txo_sum || 0) - (data.chain_stats.spent_txo_sum || 0);
 
   return {
     success:              true,
     chain:                "BTC",
     chainName:            "Bitcoin",
-    dataSource:           "api.blockchair.com",
+    dataSource:           "mempool.space",
     address,
-    txCount:              stats.transaction_count || 0,
+    txCount,
     outgoingCount:        outputCount,
-    balance:              ((stats.balance || 0) / 1e8).toFixed(8),
+    balance:              (balSats / 1e8).toFixed(8),
     balanceTicker:        "BTC",
-    contractInteractions: null,                   // N/A for Bitcoin
-    firstOutTxTimestamp:  firstSpendTs,
-    firstOutTxHash:       null,                   // Blockchair doesn't return it here
+    contractInteractions: null,
+    firstOutTxTimestamp:  null,
+    firstOutTxHash:       null,
     pubKeyExposed:        outputCount > 0,
   };
 }
@@ -128,7 +117,6 @@ async function fetchBTC(address: string): Promise<ScanResult> {
 // ─── SOL FETCHER (Helius) ─────────────────────────────────────────────────────
 async function fetchSOL(address: string): Promise<ScanResult> {
   if (!HELIUS_KEY) {
-    // Fallback: use public Solana RPC for balance only
     const rpcRes = await fetch("https://api.mainnet-beta.solana.com", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -152,11 +140,10 @@ async function fetchSOL(address: string): Promise<ScanResult> {
       contractInteractions: null,
       firstOutTxTimestamp:  null,
       firstOutTxHash:       null,
-      pubKeyExposed:        null,   // Can't determine without tx history
+      pubKeyExposed:        null,
     };
   }
 
-  // With Helius: get full tx history
   const [balRes, txRes] = await Promise.all([
     fetch(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`, {
       method: "POST",
@@ -170,14 +157,9 @@ async function fetchSOL(address: string): Promise<ScanResult> {
 
   const balData = await balRes.json();
   const txData  = await txRes.json();
-
-  const lamports   = balData.result?.value || 0;
-  const txs        = Array.isArray(txData) ? txData : [];
-
-  // Solana: Ed25519 pubkey is exposed the moment any tx is signed
-  // Any transaction at all exposes the key (unlike BTC where receive doesn't expose)
-  const pubKeyExposed = txs.length > 0;
-  const firstTx       = txs.length > 0 ? txs[txs.length - 1] : null; // oldest last
+  const lamports = balData.result?.value || 0;
+  const txs      = Array.isArray(txData) ? txData : [];
+  const firstTx  = txs.length > 0 ? txs[txs.length - 1] : null;
 
   return {
     success:              true,
@@ -186,24 +168,24 @@ async function fetchSOL(address: string): Promise<ScanResult> {
     dataSource:           "api.helius.xyz",
     address,
     txCount:              txs.length,
-    outgoingCount:        txs.length,   // On Solana, any tx exposes pubkey
+    outgoingCount:        txs.length,
     balance:              (lamports / 1e9).toFixed(6),
     balanceTicker:        "SOL",
     contractInteractions: txs.filter((t: any) => t.type === "SWAP" || t.type === "NFT_SALE").length,
     firstOutTxTimestamp:  firstTx?.timestamp || null,
     firstOutTxHash:       firstTx?.signature || null,
-    pubKeyExposed,
+    pubKeyExposed:        txs.length > 0,
   };
 }
 
-// ─── ROUTE HANDLER ─────────────────────────────────────────────────────────────
+// ─── ROUTE HANDLER ────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { address, chain, l2Chain } = body as {
       address: string;
       chain: "ETH" | "BTC" | "SOL" | "L2";
-      l2Chain?: string;   // "BASE" | "ARBITRUM" | "OPTIMISM" | "POLYGON"
+      l2Chain?: string;
     };
 
     if (!address || !chain) {
@@ -217,11 +199,8 @@ export async function POST(req: NextRequest) {
     } else if (chain === "SOL") {
       result = await fetchSOL(address);
     } else if (chain === "L2") {
-      // Use l2Chain param to pick the right explorer, default to BASE
-      const targetChain = l2Chain || "BASE";
-      result = await fetchEVM(address, targetChain);
+      result = await fetchEVM(address, l2Chain || "BASE");
     } else {
-      // ETH or any direct EVM key
       result = await fetchEVM(address, chain);
     }
 
