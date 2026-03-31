@@ -66,9 +66,18 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
     balFmt = "0.000000";
   }
 
-  // Detect smart contract
-  const bytecode = codeData.result || "0x";
-  const isContract = bytecode !== "0x" && bytecode.length > 2;
+  // Detect smart contract safely — eth_getCode returns "0x" for EOAs
+  // Etherscan proxy wraps result in a JSON-RPC response
+  let isContract = false;
+  try {
+    const bytecode = codeData.result || "0x";
+    // Must be longer than "0x" and not an error string to be a contract
+    isContract = typeof bytecode === "string" 
+      && bytecode.startsWith("0x") 
+      && bytecode.length > 4;
+  } catch {
+    isContract = false;
+  }
 
   // For EOAs: outgoing = txs sent FROM this address (key exposure)
   // For contracts: no key exposure, but still show tx count and balance
