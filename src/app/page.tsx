@@ -606,15 +606,122 @@ export default function App() {
                 const encoded = encodeURIComponent(tweet);
                 window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
               }}>Share on X</button>
-              <button className="btn-g" onClick={async () => {
-                const html2canvas = (await import('html2canvas')).default;
-                const el = document.getElementById('result-card');
-                if (!el) return;
-                const canvas = await html2canvas(el, { backgroundColor: '#020a06', scale: 2, useCORS: true });
-                const url = canvas.toDataURL('image/png');
+              <button className="btn-g" onClick={() => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 1200; canvas.height = 630;
+                const ctx = canvas.getContext('2d')!;
+
+                // background
+                ctx.fillStyle = '#020a06';
+                ctx.fillRect(0, 0, 1200, 630);
+
+                // grid lines
+                ctx.strokeStyle = '#0d2b16';
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(0, 315); ctx.lineTo(1200, 315); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(600, 0); ctx.lineTo(600, 630); ctx.stroke();
+
+                // top accent
+                ctx.fillStyle = '#00ff6a';
+                ctx.fillRect(0, 0, 1200, 3);
+
+                // risk level color
+                const mc = rl === 'high' ? '#ff3b3b' : rl === 'medium' ? '#ffb800' : '#00ff6a';
+
+                // status box
+                ctx.strokeStyle = mc;
+                ctx.lineWidth = 1;
+                ctx.strokeRect(60, 60, 1080, 180);
+                ctx.fillStyle = rl === 'high' ? '#200808' : rl === 'medium' ? '#1a1200' : '#0a4020';
+                ctx.fillRect(61, 61, 1078, 178);
+
+                // status label
+                ctx.fillStyle = mc;
+                ctx.font = '500 13px monospace';
+                ctx.fillText('// QUANTUM RISK ASSESSMENT · LIVE DATA · ' + (raw.dataSource || '').toUpperCase(), 80, 95);
+
+                // status headline
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 72px Arial';
+                ctx.fillText(raw.pubKeyExposed === true ? 'EXPOSED' : raw.pubKeyExposed === false ? 'NOT YET EXPOSED' : 'UNKNOWN', 80, 185);
+
+                // score
+                ctx.fillStyle = mc;
+                ctx.font = 'bold 96px Arial';
+                ctx.textAlign = 'right';
+                ctx.fillText(String(result.score), 1100, 185);
+                ctx.fillStyle = '#4a6b52';
+                ctx.font = '500 22px monospace';
+                ctx.fillText('/100', 1140, 185);
+                ctx.fillText('VULNERABILITY INDEX', 1140, 210);
+                ctx.textAlign = 'left';
+
+                // meter bar bg
+                ctx.fillStyle = '#133520';
+                ctx.fillRect(60, 270, 1080, 6);
+                ctx.fillStyle = mc;
+                ctx.fillRect(60, 270, Math.round(1080 * result.score / 100), 6);
+
+                // meter labels
+                ctx.fillStyle = '#4a6b52';
+                ctx.font = '12px monospace';
+                ctx.fillText('LOW RISK', 60, 295);
+                ctx.textAlign = 'right';
+                ctx.fillText('CRITICAL', 1140, 295);
+                ctx.textAlign = 'left';
+
+                // data grid
+                const gridItems = [
+                  ['PUBLIC KEY STATUS', raw.pubKeyExposed === true ? 'REVEALED' : raw.pubKeyExposed === false ? 'HIDDEN' : 'UNKNOWN'],
+                  ['TOTAL TRANSACTIONS', String(raw.txCount ?? 'N/A')],
+                  ['OUTGOING TXS', String(raw.outgoingCount ?? 'N/A')],
+                  ['BALANCE', `${raw.balance ?? 'N/A'} ${raw.balanceTicker}`],
+                  ['ADDRESS TYPE', result.addressType],
+                  ['PQC IMPLEMENTED', 'NO'],
+                ];
+                gridItems.forEach((item, i) => {
+                  const col = i % 3;
+                  const row = Math.floor(i / 3);
+                  const x = 60 + col * 360;
+                  const y = 320 + row * 80;
+                  ctx.strokeStyle = '#0d2b16';
+                  ctx.lineWidth = 1;
+                  ctx.strokeRect(x, y, 358, 78);
+                  ctx.fillStyle = '#050f08';
+                  ctx.fillRect(x + 1, y + 1, 356, 76);
+                  ctx.fillStyle = '#4a6b52';
+                  ctx.font = '11px monospace';
+                  ctx.fillText(item[0], x + 14, y + 24);
+                  ctx.fillStyle = item[0] === 'PUBLIC KEY STATUS' && raw.pubKeyExposed === true ? '#ff3b3b' :
+                                  item[0] === 'PUBLIC KEY STATUS' && raw.pubKeyExposed === false ? '#00ff6a' :
+                                  item[0] === 'PQC IMPLEMENTED' ? '#ff3b3b' : '#b8d4be';
+                  ctx.font = 'bold 16px monospace';
+                  ctx.fillText(item[1], x + 14, y + 56);
+                });
+
+                // footer
+                ctx.fillStyle = '#2a4a2e';
+                ctx.font = '12px monospace';
+                ctx.fillText('postquantumize.com · @postquantumize', 60, 595);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#4a6b52';
+                ctx.fillText('ECDSA/Ed25519 exposure model · CRQC research 2026', 1140, 595);
+                ctx.textAlign = 'left';
+
+                // bottom accent
+                ctx.fillStyle = '#00ff6a';
+                ctx.globalAlpha = 0.3;
+                ctx.fillRect(0, 627, 1200, 3);
+                ctx.globalAlpha = 1;
+
+                // corner dots
+                ctx.fillStyle = '#00ff6a';
+                ctx.fillRect(0, 0, 5, 5);
+                ctx.fillRect(1195, 0, 5, 5);
+
                 const a = document.createElement('a');
-                a.href = url;
-                a.download = `quantum-risk-${raw.pubKeyExposed===true?'exposed':'safe'}-postquantumize.png`;
+                a.href = canvas.toDataURL('image/png');
+                a.download = `quantum-risk-${raw.pubKeyExposed === true ? 'exposed' : 'safe'}-postquantumize.png`;
                 a.click();
               }}>Save as Image</button>
               <button className="btn-g" onClick={reset}>Check Another</button>
