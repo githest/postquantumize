@@ -603,8 +603,8 @@ export default function App() {
             <div className="actions">
               <button className="btn-p" onClick={() => {
                 const tweet = `Just checked my wallet on postquantumize.com\n\nQuantum Risk: ${result.score}/100 (${result.riskLevel})\nPublic Key: ${raw.pubKeyExposed===true?"EXPOSED":raw.pubKeyExposed===false?"HIDDEN":"UNKNOWN"}\nTxs: ${raw.txCount??'?'} · Outgoing: ${raw.outgoingCount??'?'}\n\nGoogle dropped research today: ECDLP-256 may break with ~500K qubits.\nCheck yours → postquantumize.com\n\n#PostQuantum #CryptoSecurity`;
-                navigator.clipboard.writeText(tweet);
-                alert("Tweet copied to clipboard!");
+                const encoded = encodeURIComponent(tweet);
+                window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
               }}>Share on X</button>
               <button className="btn-g" onClick={reset}>Check Another Wallet</button>
             </div>
