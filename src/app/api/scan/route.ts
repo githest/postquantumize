@@ -52,10 +52,6 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
   const balData  = await balRes.json();
   const codeData = await codeRes.json();
 
-  // Detect smart contract — if bytecode is anything other than "0x" it's a contract
-  const bytecode = codeData.result || "0x";
-  const isContract = bytecode !== "0x" && bytecode.length > 2;
-
   // Parse transactions safely
   const txs = Array.isArray(txData.result) ? txData.result as any[] : [];
 
@@ -70,9 +66,13 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
     balFmt = "0.000000";
   }
 
-  // For contracts, outgoing = txs sent FROM this contract
-  // For EOAs, outgoing = txs where from === address (key exposure)
-  const outgoing = txs.filter((t: any) => t.from?.toLowerCase() === addr);
+  // Detect smart contract
+  const bytecode = codeData.result || "0x";
+  const isContract = bytecode !== "0x" && bytecode.length > 2;
+
+  // For EOAs: outgoing = txs sent FROM this address (key exposure)
+  // For contracts: no key exposure, but still show tx count and balance
+  const outgoing = isContract ? [] : txs.filter((t: any) => t.from?.toLowerCase() === addr);
   const firstOut = outgoing[0] || null;
 
   return {
