@@ -630,7 +630,13 @@ export default function App() {
         {/* ── FOOTER ── */}
         <footer className="footer">
           <span className="footer-brand">postquantumize.com</span>
-          <span className="footer-note">Educational only. Not financial advice. Live data via Etherscan, mempool.space & Helius.</span>
+          <span className="footer-note">
+            Built by{" "}
+            <a href="https://twitter.com/james_base_eth" target="_blank" rel="noreferrer" style={{color:"var(--green-dim)"}}>@james_base_eth</a>
+            {" · "}
+            <a href="https://twitter.com/postquantumize" target="_blank" rel="noreferrer" style={{color:"var(--green-dim)"}}>@postquantumize</a>
+            {" · "}Educational only. Not financial advice.
+          </span>
         </footer>
       </div>
     </>
