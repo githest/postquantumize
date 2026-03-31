@@ -1,15 +1,5 @@
-/**
- * POST /api/scan
- * Unified blockchain data fetcher for quantum vulnerability analysis.
- * All API keys live server-side — never exposed to the browser.
- *
- * Body: { address: string, chain: "ETH" | "BTC" | "SOL" | "L2", l2Chain?: string }
- * Returns: ScanResult
- */
-
 import { NextRequest, NextResponse } from "next/server";
 
-// ─── ENV KEYS (set in .env.local) ────────────────────────────────────────────
 const ETHERSCAN_KEY   = process.env.ETHERSCAN_KEY   || "";
 const BASESCAN_KEY    = process.env.BASESCAN_KEY    || "";
 const ARBISCAN_KEY    = process.env.ARBISCAN_KEY    || "";
@@ -17,16 +7,14 @@ const OPTIMISM_KEY    = process.env.OPTIMISM_KEY    || "";
 const POLYGONSCAN_KEY = process.env.POLYGONSCAN_KEY || "";
 const HELIUS_KEY      = process.env.HELIUS_KEY      || "";
 
-// ─── CHAIN CONFIG ─────────────────────────────────────────────────────────────
 const EVM_CHAINS: Record<string, { name: string; apiBase: string; key: string; ticker: string }> = {
-  ETH:      { name: "Ethereum",     apiBase: "https://api.etherscan.io/api",            key: ETHERSCAN_KEY,   ticker: "ETH" },
-  BASE:     { name: "Base",         apiBase: "https://api.basescan.org/api",            key: BASESCAN_KEY,    ticker: "ETH" },
-  ARBITRUM: { name: "Arbitrum One", apiBase: "https://api.arbiscan.io/api",             key: ARBISCAN_KEY,    ticker: "ETH" },
-  OPTIMISM: { name: "Optimism",     apiBase: "https://api-optimistic.etherscan.io/api", key: OPTIMISM_KEY,    ticker: "ETH" },
-  POLYGON:  { name: "Polygon",      apiBase: "https://api.polygonscan.com/api",         key: POLYGONSCAN_KEY, ticker: "MATIC" },
+  ETH:      { name: "Ethereum",     apiBase: "https://api.etherscan.io/api",            key: ETHERSCAN_KEY,   ticker: "ETH"  },
+  BASE:     { name: "Base",         apiBase: "https://api.basescan.org/api",            key: BASESCAN_KEY,    ticker: "ETH"  },
+  ARBITRUM: { name: "Arbitrum One", apiBase: "https://api.arbiscan.io/api",             key: ARBISCAN_KEY,    ticker: "ETH"  },
+  OPTIMISM: { name: "Optimism",     apiBase: "https://api-optimistic.etherscan.io/api", key: OPTIMISM_KEY,    ticker: "ETH"  },
+  POLYGON:  { name: "Polygon",      apiBase: "https://api.polygonscan.com/api",         key: POLYGONSCAN_KEY, ticker: "MATIC"},
 };
 
-// ─── TYPES ────────────────────────────────────────────────────────────────────
 export interface ScanResult {
   success: boolean;
   chain: string;
@@ -44,7 +32,6 @@ export interface ScanResult {
   error?: string;
 }
 
-// ─── EVM FETCHER (works for ETH + all L2s) ───────────────────────────────────
 async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> {
   const cfg = EVM_CHAINS[chainKey];
   if (!cfg) throw new Error(`Unknown EVM chain: ${chainKey}`);
@@ -53,19 +40,31 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
   const keyParam = cfg.key ? `&apikey=${cfg.key}` : "";
   const base = cfg.apiBase;
 
+  // Fetch balance and first page of txs in parallel
   const [txRes, balRes] = await Promise.all([
-    fetch(`${base}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=200&sort=asc${keyParam}`, { next: { revalidate: 60 } }),
-    fetch(`${base}?module=account&action=balance&address=${addr}&tag=latest${keyParam}`, { next: { revalidate: 60 } }),
+    fetch(`${base}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc${keyParam}`),
+    fetch(`${base}?module=account&action=balance&address=${addr}&tag=latest${keyParam}`),
   ]);
 
   const txData  = await txRes.json();
   const balData = await balRes.json();
 
-  const txs      = txData.status === "1" ? txData.result as any[] : [];
-  const balWei   = balData.status === "1" ? BigInt(balData.result) : BigInt(0);
-  const balFmt   = (Number(balWei) / 1e18).toFixed(6);
-  const outgoing = txs.filter(t => t.from?.toLowerCase() === addr);
-  const firstOut = outgoing[0] || null;
+  // Parse transactions safely
+  const txs = Array.isArray(txData.result) ? txData.result as any[] : [];
+
+  // Parse balance safely — handle large numbers without BigInt overflow
+  let balFmt = "0.000000";
+  try {
+    if (balData.status === "1" && balData.result) {
+      const wei = parseFloat(balData.result);
+      balFmt = (wei / 1e18).toFixed(6);
+    }
+  } catch {
+    balFmt = "0.000000";
+  }
+
+  const outgoing  = txs.filter((t: any) => t.from?.toLowerCase() === addr);
+  const firstOut  = outgoing[0] || null;
 
   return {
     success:              true,
@@ -73,29 +72,27 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
     chainName:            cfg.name,
     dataSource:           new URL(base).hostname,
     address,
-    txCount:              txs.length,
-    outgoingCount:        outgoing.length,
-    balance:              balFmt,
+    txCount:              txData.status === "1" ? txs.length : null,
+    outgoingCount:        txData.status === "1" ? outgoing.length : null,
+    balance:              balData.status === "1" ? balFmt : null,
     balanceTicker:        cfg.ticker,
-    contractInteractions: txs.filter(t => t.input && t.input !== "0x").length,
+    contractInteractions: txs.filter((t: any) => t.input && t.input !== "0x").length,
     firstOutTxTimestamp:  firstOut ? parseInt(firstOut.timeStamp) : null,
     firstOutTxHash:       firstOut?.hash || null,
-    pubKeyExposed:        outgoing.length > 0,
+    pubKeyExposed:        txData.status === "1" ? outgoing.length > 0 : null,
   };
 }
 
-// ─── BTC FETCHER (mempool.space — free, no key needed) ────────────────────────
 async function fetchBTC(address: string): Promise<ScanResult> {
-  const res = await fetch(
-    `https://mempool.space/api/address/${address}`,
-    { next: { revalidate: 60 } }
-  );
+  const res = await fetch(`https://mempool.space/api/address/${address}`);
   if (!res.ok) throw new Error(`Mempool HTTP ${res.status}`);
   const data = await res.json();
 
-  const txCount    = data.chain_stats.tx_count || 0;
-  const outputCount = data.chain_stats.spent_txo_count || 0;
-  const balSats    = (data.chain_stats.funded_txo_sum || 0) - (data.chain_stats.spent_txo_sum || 0);
+  const txCount     = data.chain_stats?.tx_count || 0;
+  const outputCount = data.chain_stats?.spent_txo_count || 0;
+  const funded      = data.chain_stats?.funded_txo_sum || 0;
+  const spent       = data.chain_stats?.spent_txo_sum || 0;
+  const balSats     = funded - spent;
 
   return {
     success:              true,
@@ -114,33 +111,22 @@ async function fetchBTC(address: string): Promise<ScanResult> {
   };
 }
 
-// ─── SOL FETCHER (Helius) ─────────────────────────────────────────────────────
 async function fetchSOL(address: string): Promise<ScanResult> {
   if (!HELIUS_KEY) {
     const rpcRes = await fetch("https://api.mainnet-beta.solana.com", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        jsonrpc: "2.0", id: 1, method: "getBalance",
-        params: [address, { commitment: "confirmed" }],
-      }),
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [address, { commitment: "confirmed" }] }),
     });
     const rpc = await rpcRes.json();
     const lamports = rpc.result?.value || 0;
     return {
-      success:              true,
-      chain:                "SOL",
-      chainName:            "Solana",
-      dataSource:           "api.mainnet-beta.solana.com (no Helius key)",
-      address,
-      txCount:              null,
-      outgoingCount:        null,
-      balance:              (lamports / 1e9).toFixed(6),
-      balanceTicker:        "SOL",
-      contractInteractions: null,
-      firstOutTxTimestamp:  null,
-      firstOutTxHash:       null,
-      pubKeyExposed:        null,
+      success: true, chain: "SOL", chainName: "Solana",
+      dataSource: "api.mainnet-beta.solana.com",
+      address, txCount: null, outgoingCount: null,
+      balance: (lamports / 1e9).toFixed(6), balanceTicker: "SOL",
+      contractInteractions: null, firstOutTxTimestamp: null,
+      firstOutTxHash: null, pubKeyExposed: null,
     };
   }
 
@@ -148,37 +134,29 @@ async function fetchSOL(address: string): Promise<ScanResult> {
     fetch(`https://mainnet.helius-rpc.com/?api-key=${HELIUS_KEY}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ jsonrpc:"2.0", id:1, method:"getBalance", params:[address,{commitment:"confirmed"}] }),
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getBalance", params: [address, { commitment: "confirmed" }] }),
     }),
-    fetch(`https://api.helius.xyz/v0/addresses/${address}/transactions?api-key=${HELIUS_KEY}&limit=100&type=TRANSFER`, {
-      next: { revalidate: 60 },
-    }),
+    fetch(`https://api.helius.xyz/v0/addresses/${address}/transactions?api-key=${HELIUS_KEY}&limit=100`),
   ]);
 
-  const balData = await balRes.json();
-  const txData  = await txRes.json();
+  const balData  = await balRes.json();
+  const txData   = await txRes.json();
   const lamports = balData.result?.value || 0;
   const txs      = Array.isArray(txData) ? txData : [];
   const firstTx  = txs.length > 0 ? txs[txs.length - 1] : null;
 
   return {
-    success:              true,
-    chain:                "SOL",
-    chainName:            "Solana",
-    dataSource:           "api.helius.xyz",
-    address,
-    txCount:              txs.length,
-    outgoingCount:        txs.length,
-    balance:              (lamports / 1e9).toFixed(6),
-    balanceTicker:        "SOL",
+    success: true, chain: "SOL", chainName: "Solana",
+    dataSource: "api.helius.xyz", address,
+    txCount: txs.length, outgoingCount: txs.length,
+    balance: (lamports / 1e9).toFixed(6), balanceTicker: "SOL",
     contractInteractions: txs.filter((t: any) => t.type === "SWAP" || t.type === "NFT_SALE").length,
-    firstOutTxTimestamp:  firstTx?.timestamp || null,
-    firstOutTxHash:       firstTx?.signature || null,
-    pubKeyExposed:        txs.length > 0,
+    firstOutTxTimestamp: firstTx?.timestamp || null,
+    firstOutTxHash: firstTx?.signature || null,
+    pubKeyExposed: txs.length > 0,
   };
 }
 
-// ─── ROUTE HANDLER ────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -206,11 +184,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
 
-  } catch (err: any) {
-    console.error("[scan] Error:", err);
-    return NextResponse.json(
-      { success: false, error: err.message || "Scan failed" },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Scan failed";
+    console.error("[scan] Error:", message);
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }
