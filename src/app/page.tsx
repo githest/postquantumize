@@ -201,12 +201,12 @@ const SAMPLES = [
 ];
 
 const RESOURCES = [
-  { tag:"research", tc:"res-tag-r", title:"Google: ECDLP-256 May Break With Under 500K Qubits", src:"Google Quantum AI · Mar 31, 2026", url:"https://research.google/blog/safeguarding-cryptocurrency-by-disclosing-quantum-vulnerabilities-responsibly/" },
+  { tag:"breaking", tc:"res-tag-b", title:"Post-Quantum Ethereum — Official Roadmap", src:"pq.ethereum.org · 2026", url:"https://pq.ethereum.org/" },
+  { tag:"research", tc:"res-tag-r", title:"New Research: ECDLP-256 May Break With Under 500K Qubits", src:"Quantum AI Research · Mar 31, 2026", url:"https://research.google/blog/safeguarding-cryptocurrency-by-disclosing-quantum-vulnerabilities-responsibly/" },
   { tag:"breaking", tc:"res-tag-b", title:"Ethereum Foundation Makes PQ Security Top Priority", src:"The Quantum Insider · Jan 2026", url:"https://thequantuminsider.com/2026/01/26/ethereum-foundation-elevates-post-quantum-security-to-top-strategic-priority/" },
   { tag:"article",  tc:"res-tag-a", title:"Post-Quantum Cryptography: What It Is & Why It Matters", src:"Articsledge · Mar 2026", url:"https://www.articsledge.com/post/post-quantum-cryptography-pqc" },
+  { tag:"research", tc:"res-tag-r", title:"NIST Post-Quantum Standards (FIPS 203/204/205)", src:"NIST · August 2024", url:"https://csrc.nist.gov/projects/post-quantum-cryptography" },
   { tag:"research", tc:"res-tag-r", title:"Novel Transition Protocol to Post-Quantum Blockchains", src:"Frontiers in Computer Science · 2025", url:"https://www.frontiersin.org/journals/computer-science/articles/10.3389/fcomp.2025.1457000/full" },
-  { tag:"article",  tc:"res-tag-a", title:"NIST Post-Quantum Standards (FIPS 203/204/205)", src:"NIST · August 2024", url:"https://csrc.nist.gov/projects/post-quantum-cryptography" },
-  { tag:"article",  tc:"res-tag-a", title:"Google's 2029 Cryptography Migration Timeline", src:"Google Security Blog · 2026", url:"https://blog.google/innovation-and-ai/technology/safety-security/cryptography-migration-timeline/" },
 ];
 
 // ── RISK MODEL ────────────────────────────────────────────────────────────────
@@ -401,7 +401,7 @@ export default function App() {
         <header style={{marginBottom:"28px"}}>
           <h1 className="site-title">Quantum<br/><span>Vulnerability</span><br/>Checker</h1>
           <p className="site-sub">
-            Paste any Ethereum, Bitcoin or Solana wallet. We pull live on-chain data server-side to determine if your public key is exposed and calculate a real quantum risk score — based on Google's March 2026 CRQC estimates.
+            Paste any Ethereum, Bitcoin or Solana wallet. We pull live on-chain data server-side to determine if your public key is exposed and calculate a real quantum risk score.
           </p>
         </header>
 
@@ -409,7 +409,7 @@ export default function App() {
         <div className="alert">
           <span style={{flexShrink:0}}>⚡</span>
           <span>
-            <strong>March 31, 2026:</strong> Google Quantum AI published new estimates showing ECDLP-256 may break with under 500,000 physical qubits — a 20x reduction. Most crypto wallets use this exact curve.{" "}
+            <strong>March 31, 2026:</strong> New research shows ECDLP-256 may break with under 500,000 physical qubits — a 20x reduction from prior estimates. Most crypto wallets use this exact curve.{" "}
             <a href="https://research.google/blog/safeguarding-cryptocurrency-by-disclosing-quantum-vulnerabilities-responsibly/" target="_blank" rel="noreferrer">Read the paper →</a>
           </span>
         </div>
@@ -511,7 +511,7 @@ export default function App() {
             <div className="meter-wrap">
               <div className="meter-labels"><span>Low Risk</span><span>Critical</span></div>
               <div className="meter-track"><div className="meter-fill" style={{width:`${meter}%`,background:mc}}/></div>
-              <div className="meter-src">Based on ECDSA/Ed25519 exposure model · Google Quantum AI (March 2026)</div>
+              <div className="meter-src">Based on ECDSA/Ed25519 exposure model · CRQC research (March 2026)</div>
             </div>
 
             <div className="data-grid">
@@ -579,7 +579,7 @@ export default function App() {
               <div className="human-title">// What this means in plain language</div>
               <div className="human-body">
                 {result.humanExplanation}
-                <span className="human-src">Source: Google Quantum AI — "Safeguarding cryptocurrency by disclosing quantum vulnerabilities responsibly" (March 31, 2026)</span>
+                <span className="human-src">Source: pq.ethereum.org · CRQC research (March 2026)</span>
               </div>
             </div>
 
@@ -596,13 +596,13 @@ export default function App() {
             <div className="cred-bar">
               <div className="cred-item"><div className="cred-dot"/>Live data: {raw.dataSource}</div>
               <div className="cred-item"><div className="cred-dot"/>ECDSA / Ed25519 exposure model</div>
-              <div className="cred-item"><div className="cred-dot"/>Google Quantum AI 2026 estimates</div>
+              <div className="cred-item"><div className="cred-dot"/>CRQC research 2026 estimates</div>
               <div className="cred-item"><div className="cred-dot"/>API keys server-side only</div>
             </div>
 
             <div className="actions">
               <button className="btn-p" onClick={() => {
-                const tweet = `Just checked my wallet on postquantumize.com\n\nQuantum Risk: ${result.score}/100 (${result.riskLevel})\nPublic Key: ${raw.pubKeyExposed===true?"EXPOSED":raw.pubKeyExposed===false?"HIDDEN":"UNKNOWN"}\nTxs: ${raw.txCount??'?'} · Outgoing: ${raw.outgoingCount??'?'}\n\nCheck yours → postquantumize.com\n\n@postquantumize\n#PostQuantum #CryptoSecurity`;
+                const tweet = `Just checked my wallet on postquantumize.com\n\nQuantum Risk Score: ${result.score}/100 — ${result.riskLevel}\nPublic Key: ${raw.pubKeyExposed===true?"EXPOSED":raw.pubKeyExposed===false?"HIDDEN":"UNKNOWN"}\n\nCheck yours → postquantumize.com\n@postquantumize\n#PostQuantum #CryptoSecurity`;
                 const encoded = encodeURIComponent(tweet);
                 window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
               }}>Share on X</button>
