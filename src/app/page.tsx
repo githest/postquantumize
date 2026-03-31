@@ -602,7 +602,8 @@ export default function App() {
 
             <div className="actions">
               <button className="btn-p" onClick={() => {
-                const tweet = `Just checked my wallet on postquantumize.com\n\nQuantum Risk Score: ${result.score}/100 — ${result.riskLevel}\nPublic Key: ${raw.pubKeyExposed===true?"EXPOSED":raw.pubKeyExposed===false?"HIDDEN":"UNKNOWN"}\n\nCheck yours → postquantumize.com\n@postquantumize\n#PostQuantum #CryptoSecurity`;
+                const exposedLine = raw.pubKeyExposed === true ? `\nPublic Key: EXPOSED` : '';
+                const tweet = `Just checked my wallet for quantum risk and this is what I found.\n\nQuantum Risk Score: ${result.score}/100 — ${result.riskLevel}${exposedLine}\n\npostquantumize.com\n@postquantumize`;
                 const encoded = encodeURIComponent(tweet);
                 window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
               }}>Share on X</button>
