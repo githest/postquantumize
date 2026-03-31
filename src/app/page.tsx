@@ -219,6 +219,19 @@ function calcRisk({ chain, addrData, address }: any) {
   let findings: any[] = [];
   let humanExplanation = "";
 
+  // Smart contract — no private key, not quantum vulnerable directly
+  if (addrData?.isContract) {
+    addressType = "Smart Contract (EVM)";
+    score = 20;
+    humanExplanation = `This is a smart contract, not a personal wallet. Smart contracts use code-based access control rather than ECDSA private keys, so they are not directly vulnerable to quantum key extraction. However, the EOA wallets that own or control this contract may be at risk — check the owner's wallet address separately.`;
+    findings = [
+      { icon:"ℹ️", text:"<strong>This is a smart contract.</strong> It does not have a private key that can be extracted by a quantum computer." },
+      { icon:"⚠️", text:"<strong>The controlling wallets may be at risk.</strong> EOA addresses that own this contract use ECDSA keys which are quantum-vulnerable." },
+      { icon:"✅", text:"<strong>No direct quantum threat to this contract.</strong> Contract logic is secured by the Ethereum protocol, not by public-key cryptography." },
+    ];
+    return { score, riskLevel: "LOW", pubKeyExposed: false, firstExposureDate: null, addressType, findings, humanExplanation };
+  }
+
   if (!isBTC) {
     addressType = chain === "L2" ? "EVM / L2" : chain === "SOL" ? "Solana (Ed25519)" : "EVM / Ethereum";
     if (addrData) {

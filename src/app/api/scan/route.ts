@@ -29,6 +29,7 @@ export interface ScanResult {
   firstOutTxTimestamp: number | null;
   firstOutTxHash: string | null;
   pubKeyExposed: boolean | null;
+  isContract: boolean;
   error?: string;
 }
 
@@ -40,19 +41,25 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
   const keyParam = cfg.key ? `&apikey=${cfg.key}` : "";
   const base = cfg.apiBase;
 
-  // Fetch balance and first page of txs in parallel
-  const [txRes, balRes] = await Promise.all([
+  // Fetch txs, balance, and contract code check in parallel
+  const [txRes, balRes, codeRes] = await Promise.all([
     fetch(`${base}?module=account&action=txlist&address=${addr}&startblock=0&endblock=99999999&page=1&offset=10000&sort=asc${keyParam}`),
     fetch(`${base}?module=account&action=balance&address=${addr}&tag=latest${keyParam}`),
+    fetch(`${base}?module=proxy&action=eth_getCode&address=${addr}&tag=latest${keyParam}`),
   ]);
 
-  const txData  = await txRes.json();
-  const balData = await balRes.json();
+  const txData   = await txRes.json();
+  const balData  = await balRes.json();
+  const codeData = await codeRes.json();
+
+  // Detect smart contract — if bytecode is anything other than "0x" it's a contract
+  const bytecode = codeData.result || "0x";
+  const isContract = bytecode !== "0x" && bytecode.length > 2;
 
   // Parse transactions safely
   const txs = Array.isArray(txData.result) ? txData.result as any[] : [];
 
-  // Parse balance safely — handle large numbers without BigInt overflow
+  // Parse balance safely
   let balFmt = "0.000000";
   try {
     if (balData.status === "1" && balData.result) {
@@ -63,8 +70,10 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
     balFmt = "0.000000";
   }
 
-  const outgoing  = txs.filter((t: any) => t.from?.toLowerCase() === addr);
-  const firstOut  = outgoing[0] || null;
+  // For contracts, outgoing = txs sent FROM this contract
+  // For EOAs, outgoing = txs where from === address (key exposure)
+  const outgoing = txs.filter((t: any) => t.from?.toLowerCase() === addr);
+  const firstOut = outgoing[0] || null;
 
   return {
     success:              true,
@@ -79,7 +88,8 @@ async function fetchEVM(address: string, chainKey: string): Promise<ScanResult> 
     contractInteractions: txs.filter((t: any) => t.input && t.input !== "0x").length,
     firstOutTxTimestamp:  firstOut ? parseInt(firstOut.timeStamp) : null,
     firstOutTxHash:       firstOut?.hash || null,
-    pubKeyExposed:        txData.status === "1" ? outgoing.length > 0 : null,
+    pubKeyExposed:        isContract ? false : (txData.status === "1" ? outgoing.length > 0 : null),
+    isContract,
   };
 }
 
@@ -95,19 +105,14 @@ async function fetchBTC(address: string): Promise<ScanResult> {
   const balSats     = funded - spent;
 
   return {
-    success:              true,
-    chain:                "BTC",
-    chainName:            "Bitcoin",
-    dataSource:           "mempool.space",
-    address,
-    txCount,
-    outgoingCount:        outputCount,
-    balance:              (balSats / 1e8).toFixed(8),
-    balanceTicker:        "BTC",
+    success: true, chain: "BTC", chainName: "Bitcoin",
+    dataSource: "mempool.space", address,
+    txCount, outgoingCount: outputCount,
+    balance: (balSats / 1e8).toFixed(8), balanceTicker: "BTC",
     contractInteractions: null,
-    firstOutTxTimestamp:  null,
-    firstOutTxHash:       null,
-    pubKeyExposed:        outputCount > 0,
+    firstOutTxTimestamp: null, firstOutTxHash: null,
+    pubKeyExposed: outputCount > 0,
+    isContract: false,
   };
 }
 
@@ -122,11 +127,12 @@ async function fetchSOL(address: string): Promise<ScanResult> {
     const lamports = rpc.result?.value || 0;
     return {
       success: true, chain: "SOL", chainName: "Solana",
-      dataSource: "api.mainnet-beta.solana.com",
-      address, txCount: null, outgoingCount: null,
+      dataSource: "api.mainnet-beta.solana.com", address,
+      txCount: null, outgoingCount: null,
       balance: (lamports / 1e9).toFixed(6), balanceTicker: "SOL",
-      contractInteractions: null, firstOutTxTimestamp: null,
-      firstOutTxHash: null, pubKeyExposed: null,
+      contractInteractions: null,
+      firstOutTxTimestamp: null, firstOutTxHash: null,
+      pubKeyExposed: null, isContract: false,
     };
   }
 
@@ -153,7 +159,7 @@ async function fetchSOL(address: string): Promise<ScanResult> {
     contractInteractions: txs.filter((t: any) => t.type === "SWAP" || t.type === "NFT_SALE").length,
     firstOutTxTimestamp: firstTx?.timestamp || null,
     firstOutTxHash: firstTx?.signature || null,
-    pubKeyExposed: txs.length > 0,
+    pubKeyExposed: txs.length > 0, isContract: false,
   };
 }
 
