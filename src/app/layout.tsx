@@ -3,12 +3,12 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "postquantumize.com — Quantum Vulnerability Checker",
   description:
-    "Check if your crypto wallet's public key is exposed and calculate your quantum risk score. Live blockchain data. Based on Google's 2026 CRQC estimates.",
+    "Check if your crypto wallet is quantum safe. Paste any ETH, BTC or SOL address — see if your public key is exposed on-chain.",
   metadataBase: new URL("https://postquantumize.com"),
   openGraph: {
     title: "postquantumize.com — Is Your Wallet Quantum Safe?",
     description:
-      "Google just showed ECDLP-256 may break with under 500K qubits. Paste your ETH, BTC or SOL address. See if your public key is already exposed on-chain.",
+      "Check if your crypto wallet is quantum safe. Paste any ETH, BTC or SOL address — see if your public key is exposed on-chain. Free. Live data.",
     url: "https://postquantumize.com",
     siteName: "postquantumize.com",
     images: [

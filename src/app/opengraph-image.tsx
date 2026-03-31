@@ -27,8 +27,8 @@ export default function OGImage() {
       <div style={{ fontSize: 26, color: "#b8d4be", marginBottom: 40 }}>
         Your wallet may already be exposed.
       </div>
-      <div style={{ display: "flex", fontSize: 16, color: "#ffb800", padding: "16px 24px", border: "1px solid rgba(255,184,0,0.3)", background: "rgba(255,184,0,0.04)" }}>
-        ⚡  March 31, 2026 — Google Quantum AI: ECDLP-256 may break with under 500,000 qubits — a 20x reduction.
+      <div style={{ display: "flex", fontSize: 16, color: "#00c44f", padding: "16px 24px", border: "1px solid rgba(0,196,79,0.3)", background: "rgba(0,196,79,0.04)" }}>
+        Check if your ETH, BTC or SOL wallet's public key is exposed on-chain. Free. Live blockchain data.
       </div>
       <div style={{ display: "flex", gap: 24, marginTop: 40 }}>
         <div style={{ fontSize: 13, color: "#4a6b52", padding: "8px 16px", border: "1px solid #0d2b16" }}>ETH · BTC · SOL · L2</div>
