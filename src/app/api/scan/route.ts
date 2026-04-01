@@ -179,6 +179,30 @@ export async function POST(req: NextRequest) {
     else if (chain === "SOL") result = await fetchSOL(address);
     else if (chain === "L2")  result = await fetchEVM(address, l2Chain || "BASE");
     else                      result = await fetchEVM(address, chain);
+    // Track scan anonymously — no wallet address stored
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+      if (supabaseUrl && supabaseKey) {
+        await fetch(`${supabaseUrl}/rest/v1/scans`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            chain: result.chain,
+            risk_level: result.pubKeyExposed === true ? "HIGH" :
+                        result.pubKeyExposed === false ? "LOW" : "UNKNOWN",
+            is_exposed: result.pubKeyExposed === true,
+            is_contract: result.isContract,
+            score: null, // score is calculated client-side
+          }),
+        });
+      }
+    } catch { /* analytics failure should never break the scan */ }
+
     return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Scan failed";
