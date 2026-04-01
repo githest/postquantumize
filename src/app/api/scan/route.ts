@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 const ETHERSCAN_KEY = process.env.ETHERSCAN_KEY || "";
 const HELIUS_KEY    = process.env.HELIUS_KEY    || "";
+
+const supabase = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY
+  ? createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+  : null;
 
 const EVM_CHAINS: Record<string, { name: string; apiBase: string; ticker: string }> = {
   ETH:      { name: "Ethereum",     apiBase: "https://api.etherscan.io/v2/api?chainid=1",    ticker: "ETH"  },
@@ -181,24 +186,13 @@ export async function POST(req: NextRequest) {
     else                      result = await fetchEVM(address, chain);
     // Track scan anonymously — no wallet address stored
     try {
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-      if (supabaseUrl && supabaseKey) {
-        await fetch(`${supabaseUrl}/rest/v1/scans`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`,
-          },
-          body: JSON.stringify({
-            chain: result.chain,
-            risk_level: result.pubKeyExposed === true ? "HIGH" :
-                        result.pubKeyExposed === false ? "LOW" : "UNKNOWN",
-            is_exposed: result.pubKeyExposed === true,
-            is_contract: result.isContract,
-            score: null, // score is calculated client-side
-          }),
+      if (supabase) {
+        await supabase.from("scans").insert({
+          chain: result.chain,
+          risk_level: result.pubKeyExposed === true ? "HIGH" :
+                      result.pubKeyExposed === false ? "LOW" : "UNKNOWN",
+          is_exposed: result.pubKeyExposed === true,
+          is_contract: result.isContract,
         });
       }
     } catch { /* analytics failure should never break the scan */ }
