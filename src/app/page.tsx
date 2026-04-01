@@ -343,7 +343,7 @@ export default function App() {
 
       setStep("format","active");
 
-      // ENS resolution
+      // ENS / SNS name resolution
       if (addr.toLowerCase().endsWith('.eth')) {
         setStep("format","active","Resolving ENS name...");
         await delay(200);
@@ -359,6 +359,25 @@ export default function App() {
           }
         } catch (e: any) {
           setApiErr(e.message || "Could not resolve ENS name. Check spelling and try again.");
+          setPhase("error");
+          return;
+        }
+      } else if (addr.toLowerCase().endsWith('.sol')) {
+        setStep("format","active","Resolving .sol name...");
+        await delay(200);
+        try {
+          const domain  = addr.toLowerCase().replace('.sol','');
+          const snsRes  = await fetch(`https://sns-sdk-proxy.bonfida.workers.dev/resolve/${domain}`);
+          const snsData = await snsRes.json();
+          if (snsData.result) {
+            const resolved = snsData.result;
+            setStep("format","done",`${addr} → ${resolved.slice(0,6)}...${resolved.slice(-4)}`);
+            addr = resolved;
+          } else {
+            throw new Error(".sol name not found or not registered");
+          }
+        } catch (e: any) {
+          setApiErr(e.message || "Could not resolve .sol name. Check spelling and try again.");
           setPhase("error");
           return;
         }
