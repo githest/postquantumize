@@ -194,11 +194,22 @@ const L2_OPTIONS = [
   { value:"POLYGON", label:"Polygon" },
 ];
 
-const SAMPLES = [
-  { label:"ETH (Vitalik)", addr:"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045", chain:"ETH" },
-  { label:"BTC Genesis",   addr:"1A1zP1eP5QGefi2DMPTfTL5SLmv7Divfna",            chain:"BTC" },
-  { label:"BTC Taproot",   addr:"bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297", chain:"BTC" },
-];
+const SAMPLES: Record<string, {label:string; addr:string}[]> = {
+  ETH: [
+    { label:"vitalik.eth",   addr:"vitalik.eth" },
+    { label:"Vitalik 0x...", addr:"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" },
+  ],
+  BTC: [
+    { label:"Genesis block", addr:"1A1zP1eP5QGefi2DMPTfTL5SLmv7Divfna" },
+    { label:"Taproot",       addr:"bc1p5d7rjq7g6rdk2yhzks9smlaqtedr4dekq08ge8ztwac72sfr9rusxg3297" },
+  ],
+  SOL: [
+    { label:"Solana sample", addr:"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM" },
+  ],
+  L2: [
+    { label:"0x sample",     addr:"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045" },
+  ],
+};
 
 const RESOURCES = [
   { tag:"breaking", tc:"res-tag-b", title:"Post-Quantum Ethereum — Official Roadmap", src:"pq.ethereum.org · 2026", url:"https://pq.ethereum.org/" },
@@ -320,7 +331,7 @@ export default function App() {
 
   async function scan() {
     if (!address.trim()) return;
-    const addr = address.trim();
+    let addr = address.trim();
     const steps = makeSteps(chain);
     setPhase("scanning"); setResult(null); setApiErr("");
     setStepSt(Object.fromEntries(steps.map(s => [s.id,"pending"])));
@@ -330,13 +341,36 @@ export default function App() {
       setStep("init","active"); await delay(350);
       setStep("init","done","Scanner ready");
 
-      setStep("format","active"); await delay(400);
-      setStep("format","done",
-        chain==="BTC" ? "Bitcoin address detected" :
-        chain==="SOL" ? "Solana address detected" :
-        chain==="L2"  ? `EVM / ${l2Chain} address detected` :
-        "Ethereum address detected"
-      );
+      setStep("format","active");
+
+      // ENS resolution
+      if (addr.toLowerCase().endsWith('.eth')) {
+        setStep("format","active","Resolving ENS name...");
+        await delay(200);
+        try {
+          const ensRes  = await fetch(`https://api.ensideas.com/ens/resolve/${addr}`);
+          const ensData = await ensRes.json();
+          if (ensData.address && ensData.address !== "0x0000000000000000000000000000000000000000") {
+            const resolved = ensData.address;
+            setStep("format","done",`${addr} → ${resolved.slice(0,6)}...${resolved.slice(-4)}`);
+            addr = resolved;
+          } else {
+            throw new Error("ENS name not found or not registered");
+          }
+        } catch (e: any) {
+          setApiErr(e.message || "Could not resolve ENS name. Check spelling and try again.");
+          setPhase("error");
+          return;
+        }
+      } else {
+        await delay(400);
+        setStep("format","done",
+          chain==="BTC" ? "Bitcoin address detected" :
+          chain==="SOL" ? "Solana address detected" :
+          chain==="L2"  ? `EVM / ${l2Chain} address detected` :
+          "Ethereum address detected"
+        );
+      }
 
       setStep("fetch","active",`Querying ${chain==="BTC"?"mempool.space":chain==="SOL"?"Helius":"Etherscan"} API...`);
       const res  = await fetch("/api/scan", {
@@ -435,7 +469,11 @@ export default function App() {
             <input
               className="addr-input"
               value={address}
-              placeholder="0x... or bc1... or 1... or Sol..."
+              placeholder={
+                chain === "BTC" ? "bc1... or 1... or 3..." :
+                chain === "SOL" ? "SOL address or .sol" :
+                "0x... or ENS"
+              }
               spellCheck={false}
               disabled={isRunning}
               onChange={e => setAddress(e.target.value)}
@@ -455,9 +493,9 @@ export default function App() {
           </div>
           <div className="samples">
             <span className="sample-label">Try:</span>
-            {SAMPLES.map(s => (
+            {(SAMPLES[chain] || SAMPLES["ETH"]).map(s => (
               <button key={s.label} className="sample-pill" disabled={isRunning}
-                onClick={() => { reset(); setTimeout(() => { setAddress(s.addr); setChain(s.chain); }, 10); }}>
+                onClick={() => { reset(); setTimeout(() => setAddress(s.addr), 10); }}>
                 {s.label}
               </button>
             ))}
