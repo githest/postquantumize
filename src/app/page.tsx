@@ -39,7 +39,16 @@ const STYLE = `
   .topbar-nav a { font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim); text-decoration:none; padding:5px 10px; border:1px solid transparent; transition:all 0.2s; }
   .topbar-nav a:hover { color:var(--green); border-color:var(--border); }
 
-  /* ── HEADER ── */
+  /* BUY PQZ */
+  .buy-pqz {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--green); text-decoration: none;
+    border: 1px solid var(--green-dim); padding: 4px 10px;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .buy-pqz:hover { background: var(--green-muted); }
+  .buy-pqz-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; flex-shrink: 0; }
   .site-title { font-family:var(--font-display); font-size:clamp(28px,5.5vw,50px); font-weight:800; color:#fff; line-height:1.05; letter-spacing:-0.02em; margin-bottom:14px; }
   .site-title span { color:var(--green); }
   .site-sub { font-size:12px; color:var(--text-dim); line-height:1.8; max-width:520px; margin-bottom:32px; }
@@ -454,6 +463,15 @@ export default function App() {
             <span className="wm-ize">ize</span>
           </div>
           <div className="topbar-right">
+            <a
+              href="https://www.clanker.world/clanker/0xD42dCFbe233DA5B1FdC2420a0F042A5911771B07"
+              target="_blank"
+              rel="noreferrer"
+              className="buy-pqz"
+            >
+              <div className="buy-pqz-dot"/>
+              Buy $PQZ
+            </a>
             <span className="topbar-tag">
               <span className="live-dot"/>live · v1.1
             </span>
