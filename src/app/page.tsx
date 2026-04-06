@@ -181,7 +181,22 @@ const STYLE = `
   .res-viewall { font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim); text-decoration:none; border:1px solid var(--border); padding:8px 14px; display:inline-block; transition:all 0.2s; }
   .res-viewall:hover { border-color:var(--green-dim); color:var(--green); }
 
-  /* ── FOOTER ── */
+  /* ── PQZ TOKEN ── */
+  .pqz-section { border-top:1px solid var(--border); margin-top:40px; padding-top:32px; }
+  .pqz-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
+  .pqz-title { font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--text-dim); display:flex; align-items:center; gap:10px; }
+  .pqz-title::after { content:''; flex:1; height:1px; background:var(--border); width:40px; }
+  .pqz-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); margin-bottom:16px; }
+  .pqz-cell { background:var(--surface); padding:12px 16px; }
+  .pqz-label { font-size:9px; color:var(--text-dim); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:5px; }
+  .pqz-value { font-size:12px; color:var(--text); word-break:break-all; }
+  .pqz-value-green { color:var(--green); font-family:var(--font-display); font-weight:700; font-size:16px; }
+  .pqz-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .pqz-btn-primary { font-family:var(--font-mono); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; padding:10px 18px; background:var(--green-muted); border:1px solid var(--green-dim); color:var(--green); text-decoration:none; display:inline-block; transition:all 0.2s; }
+  .pqz-btn-primary:hover { background:rgba(0,255,106,0.15); }
+  .pqz-btn-secondary { font-family:var(--font-mono); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; padding:10px 18px; background:transparent; border:1px solid var(--border); color:var(--text-dim); text-decoration:none; display:inline-block; transition:all 0.2s; }
+  .pqz-btn-secondary:hover { border-color:var(--text-dim); color:var(--text); }
+  .pqz-desc { font-size:11px; color:var(--text-dim); line-height:1.7; margin-bottom:16px; max-width:520px; }
   .footer { margin-top:48px; padding-top:18px; border-top:1px solid var(--border); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
   .footer-brand { font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--green); }
   .footer-note { font-size:10px; color:var(--text-dim); }
@@ -222,11 +237,11 @@ const SAMPLES: Record<string, {label:string; addr:string}[]> = {
 
 const RESOURCES = [
   { tag:"breaking", tc:"res-tag-b", title:"Post-Quantum Ethereum — Official Roadmap", src:"pq.ethereum.org · 2026", url:"https://pq.ethereum.org/" },
+  { tag:"research",  tc:"res-tag-r", title:"The Post-Quantum Divergence: Risk and Readiness Across Blockchains", src:"Etherealize · Apr 2, 2026", url:"https://x.com/Etherealize_io/status/2039731174738714876" },
+  { tag:"breaking", tc:"res-tag-b", title:"Grayscale: Quantum Breakthroughs Come in Sudden Leaps — Preparation Can't Be Delayed", src:"Grayscale Research · Apr 6, 2026", url:"https://x.com/Grayscale/status/2041204933501108698" },
   { tag:"research", tc:"res-tag-r", title:"New Research: ECDLP-256 May Break With Under 500K Qubits", src:"Quantum AI Research · Mar 31, 2026", url:"https://research.google/blog/safeguarding-cryptocurrency-by-disclosing-quantum-vulnerabilities-responsibly/" },
   { tag:"breaking", tc:"res-tag-b", title:"Ethereum Foundation Makes PQ Security Top Priority", src:"The Quantum Insider · Jan 2026", url:"https://thequantuminsider.com/2026/01/26/ethereum-foundation-elevates-post-quantum-security-to-top-strategic-priority/" },
-  { tag:"article",  tc:"res-tag-a", title:"Post-Quantum Cryptography: What It Is & Why It Matters", src:"Articsledge · Mar 2026", url:"https://www.articsledge.com/post/post-quantum-cryptography-pqc" },
-  { tag:"research", tc:"res-tag-r", title:"NIST Post-Quantum Standards (FIPS 203/204/205)", src:"NIST · August 2024", url:"https://csrc.nist.gov/projects/post-quantum-cryptography" },
-  { tag:"research", tc:"res-tag-r", title:"Novel Transition Protocol to Post-Quantum Blockchains", src:"Frontiers in Computer Science · 2025", url:"https://www.frontiersin.org/journals/computer-science/articles/10.3389/fcomp.2025.1457000/full" },
+  { tag:"article",  tc:"res-tag-a", title:"NIST Post-Quantum Standards (FIPS 203/204/205)", src:"NIST · August 2024", url:"https://csrc.nist.gov/projects/post-quantum-cryptography" },
 ];
 
 // ── RISK MODEL ────────────────────────────────────────────────────────────────
@@ -475,9 +490,6 @@ export default function App() {
             <span className="topbar-tag">
               <span className="live-dot"/>live · v1.1
             </span>
-            <nav className="topbar-nav">
-              <a href="/resources">Resources →</a>
-            </nav>
           </div>
         </div>
 
@@ -832,12 +844,48 @@ export default function App() {
               </a>
             ))}
           </div>
-          <a href="/resources" className="res-viewall">View all resources + videos →</a>
+        </div>
+
+        {/* ── FOOTER ── */}
+        {/* ── $PQZ TOKEN ── */}
+        <div className="pqz-section">
+          <div className="pqz-header">
+            <div className="pqz-title">// $PQZ — Community Token</div>
+          </div>
+          <p className="pqz-desc">
+            $PQZ is the community token for postquantumize.com. Fair launch on Base via Clanker. No team allocation. No presale. For everyone who believes quantum security matters before it is too late.
+          </p>
+          <div className="pqz-grid">
+            <div className="pqz-cell">
+              <div className="pqz-label">Token</div>
+              <div className="pqz-value pqz-value-green">$PQZ</div>
+            </div>
+            <div className="pqz-cell">
+              <div className="pqz-label">Chain</div>
+              <div className="pqz-value">Base</div>
+            </div>
+            <div className="pqz-cell">
+              <div className="pqz-label">Pair</div>
+              <div className="pqz-value">PQZ / WETH</div>
+            </div>
+            <div className="pqz-cell">
+              <div className="pqz-label">Launch</div>
+              <div className="pqz-value">Clanker · Uniswap V4</div>
+            </div>
+            <div className="pqz-cell" style={{gridColumn:"span 2"}}>
+              <div className="pqz-label">Contract Address</div>
+              <div className="pqz-value" style={{fontSize:"11px"}}>0xD42dCFbe233DA5B1FdC2420a0F042A5911771B07</div>
+            </div>
+          </div>
+          <div className="pqz-actions">
+            <a href="https://www.clanker.world/clanker/0xD42dCFbe233DA5B1FdC2420a0F042A5911771B07" target="_blank" rel="noreferrer" className="pqz-btn-primary">Buy $PQZ on Clanker →</a>
+            <a href="https://www.geckoterminal.com/base/pools/0xD42dCFbe233DA5B1FdC2420a0F042A5911771B07" target="_blank" rel="noreferrer" className="pqz-btn-secondary">View Chart →</a>
+            <a href="https://basescan.org/token/0xD42dCFbe233DA5B1FdC2420a0F042A5911771B07" target="_blank" rel="noreferrer" className="pqz-btn-secondary">Basescan →</a>
+          </div>
         </div>
 
         {/* ── FOOTER ── */}
         <footer className="footer">
-          <span className="footer-brand">postquantumize.com</span>
           <span className="footer-note">
             Built by{" "}
             <a href="https://twitter.com/james_base_eth" target="_blank" rel="noreferrer" style={{color:"var(--green-dim)"}}>@james_base_eth</a>
