@@ -171,6 +171,22 @@ const STYLE = `
   .res-viewall { font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim); text-decoration:none; border:1px solid var(--border); padding:8px 14px; display:inline-block; transition:all 0.2s; }
   .res-viewall:hover { border-color:var(--green-dim); color:var(--green); }
 
+  /* ── $PQ TOKEN ── */
+  .pqz-section { border-top:1px solid var(--border); margin-top:40px; padding-top:32px; }
+  .pqz-title { font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--text-dim); display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .pqz-title::after { content:''; flex:1; height:1px; background:var(--border); width:40px; }
+  .pqz-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); margin-bottom:16px; }
+  .pqz-cell { background:var(--surface); padding:12px 16px; }
+  .pqz-label { font-size:9px; color:var(--text-dim); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:5px; }
+  .pqz-value { font-size:12px; color:var(--text); word-break:break-all; }
+  .pqz-value-green { color:var(--green); font-family:var(--font-display); font-weight:700; font-size:16px; }
+  .pqz-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .pqz-btn-primary { font-family:var(--font-mono); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; padding:10px 18px; background:var(--green-muted); border:1px solid var(--green-dim); color:var(--green); text-decoration:none; display:inline-block; transition:all 0.2s; }
+  .pqz-btn-primary:hover { background:rgba(0,255,106,0.15); }
+  .pqz-btn-secondary { font-family:var(--font-mono); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; padding:10px 18px; background:transparent; border:1px solid var(--border); color:var(--text-dim); text-decoration:none; display:inline-block; transition:all 0.2s; }
+  .pqz-btn-secondary:hover { border-color:var(--text-dim); color:var(--text); }
+  .pqz-desc { font-size:11px; color:var(--text-dim); line-height:1.7; margin-bottom:16px; max-width:520px; }
+
   .footer { margin-top:48px; padding-top:18px; border-top:1px solid var(--border); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
   .footer-brand { font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--green); }
   .footer-note { font-size:10px; color:var(--text-dim); }
@@ -452,6 +468,10 @@ export default function App() {
             <span className="wm-ize">ize</span>
           </div>
           <div className="topbar-right">
+            <a href="https://flaunch.gg/base/coins/0xec797609C3b3246145425979b244063140bB4283" target="_blank" rel="noreferrer" style={{fontFamily:"var(--font-mono)",fontSize:"10px",letterSpacing:"0.15em",textTransform:"uppercase",color:"var(--green)",textDecoration:"none",border:"1px solid var(--green-dim)",padding:"4px 10px",display:"inline-flex",alignItems:"center",gap:"6px",transition:"all 0.2s",background:"var(--green-muted)"}}>
+              <span style={{width:"5px",height:"5px",borderRadius:"50%",background:"var(--green)",animation:"pulse 2s ease-in-out infinite",flexShrink:0,display:"inline-block"}}/>
+              Buy $PQ
+            </a>
             <span className="topbar-tag">
               <span className="live-dot"/>live · v1.1
             </span>
@@ -808,6 +828,40 @@ export default function App() {
                 <div className="res-arrow">Read →</div>
               </a>
             ))}
+          </div>
+        </div>
+
+        {/* ── $PQ TOKEN ── */}
+        <div className="pqz-section">
+          <div className="pqz-title">// $PQ — Post Quantumize Token</div>
+          <p className="pqz-desc">
+            The Post-Quantum community token for postquantumize.com. Built for everyone who believes crypto needs to go Post-Quantum before it matters. Fair launch on Base. No team allocation. No presale.
+          </p>
+          <div className="pqz-grid">
+            <div className="pqz-cell">
+              <div className="pqz-label">Token</div>
+              <div className="pqz-value pqz-value-green">$PQ</div>
+            </div>
+            <div className="pqz-cell">
+              <div className="pqz-label">Name</div>
+              <div className="pqz-value">Post Quantumize</div>
+            </div>
+            <div className="pqz-cell">
+              <div className="pqz-label">Chain</div>
+              <div className="pqz-value">Base</div>
+            </div>
+            <div className="pqz-cell">
+              <div className="pqz-label">Launch</div>
+              <div className="pqz-value">Flaunch.gg</div>
+            </div>
+            <div className="pqz-cell" style={{gridColumn:"span 2"}}>
+              <div className="pqz-label">Contract Address</div>
+              <div className="pqz-value" style={{fontSize:"11px"}}>0xec797609C3b3246145425979b244063140bB4283</div>
+            </div>
+          </div>
+          <div className="pqz-actions">
+            <a href="https://flaunch.gg/base/coins/0xec797609C3b3246145425979b244063140bB4283" target="_blank" rel="noreferrer" className="pqz-btn-primary">Buy $PQ on Flaunch →</a>
+            <a href="https://basescan.org/token/0xec797609C3b3246145425979b244063140bB4283" target="_blank" rel="noreferrer" className="pqz-btn-secondary">Basescan →</a>
           </div>
         </div>
 
