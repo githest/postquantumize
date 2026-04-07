@@ -39,16 +39,6 @@ const STYLE = `
   .topbar-nav a { font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim); text-decoration:none; padding:5px 10px; border:1px solid transparent; transition:all 0.2s; }
   .topbar-nav a:hover { color:var(--green); border-color:var(--border); }
 
-  /* BUY PQZ */
-  .buy-pqz {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.15em;
-    text-transform: uppercase; color: var(--green); text-decoration: none;
-    border: 1px solid var(--green-dim); padding: 4px 10px;
-    transition: all 0.2s; white-space: nowrap;
-  }
-  .buy-pqz:hover { background: var(--green-muted); }
-  .buy-pqz-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: pulse 2s ease-in-out infinite; flex-shrink: 0; }
   .site-title { font-family:var(--font-display); font-size:clamp(28px,5.5vw,50px); font-weight:800; color:#fff; line-height:1.05; letter-spacing:-0.02em; margin-bottom:14px; }
   .site-title span { color:var(--green); }
   .site-sub { font-size:12px; color:var(--text-dim); line-height:1.8; max-width:520px; margin-bottom:32px; }
@@ -181,22 +171,6 @@ const STYLE = `
   .res-viewall { font-family:var(--font-mono); font-size:10px; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim); text-decoration:none; border:1px solid var(--border); padding:8px 14px; display:inline-block; transition:all 0.2s; }
   .res-viewall:hover { border-color:var(--green-dim); color:var(--green); }
 
-  /* ── PQZ TOKEN ── */
-  .pqz-section { border-top:1px solid var(--border); margin-top:40px; padding-top:32px; }
-  .pqz-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
-  .pqz-title { font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--text-dim); display:flex; align-items:center; gap:10px; }
-  .pqz-title::after { content:''; flex:1; height:1px; background:var(--border); width:40px; }
-  .pqz-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); margin-bottom:16px; }
-  .pqz-cell { background:var(--surface); padding:12px 16px; }
-  .pqz-label { font-size:9px; color:var(--text-dim); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:5px; }
-  .pqz-value { font-size:12px; color:var(--text); word-break:break-all; }
-  .pqz-value-green { color:var(--green); font-family:var(--font-display); font-weight:700; font-size:16px; }
-  .pqz-actions { display:flex; gap:8px; flex-wrap:wrap; }
-  .pqz-btn-primary { font-family:var(--font-mono); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; padding:10px 18px; background:var(--green-muted); border:1px solid var(--green-dim); color:var(--green); text-decoration:none; display:inline-block; transition:all 0.2s; }
-  .pqz-btn-primary:hover { background:rgba(0,255,106,0.15); }
-  .pqz-btn-secondary { font-family:var(--font-mono); font-size:10px; letter-spacing:0.18em; text-transform:uppercase; padding:10px 18px; background:transparent; border:1px solid var(--border); color:var(--text-dim); text-decoration:none; display:inline-block; transition:all 0.2s; }
-  .pqz-btn-secondary:hover { border-color:var(--text-dim); color:var(--text); }
-  .pqz-desc { font-size:11px; color:var(--text-dim); line-height:1.7; margin-bottom:16px; max-width:520px; }
   .footer { margin-top:48px; padding-top:18px; border-top:1px solid var(--border); display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; }
   .footer-brand { font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--green); }
   .footer-note { font-size:10px; color:var(--text-dim); }
@@ -478,15 +452,6 @@ export default function App() {
             <span className="wm-ize">ize</span>
           </div>
           <div className="topbar-right">
-            <a
-              href="https://www.clanker.world/clanker/0xD42dCFbe233DA5B1FdC2420a0F042A5911771B07"
-              target="_blank"
-              rel="noreferrer"
-              className="buy-pqz"
-            >
-              <div className="buy-pqz-dot"/>
-              Buy $PQZ
-            </a>
             <span className="topbar-tag">
               <span className="live-dot"/>live · v1.1
             </span>
@@ -843,44 +808,6 @@ export default function App() {
                 <div className="res-arrow">Read →</div>
               </a>
             ))}
-          </div>
-        </div>
-
-        {/* ── FOOTER ── */}
-        {/* ── $PQZ TOKEN ── */}
-        <div className="pqz-section">
-          <div className="pqz-header">
-            <div className="pqz-title">// $PQZ — Community Token</div>
-          </div>
-          <p className="pqz-desc">
-            $PQZ is the community token for postquantumize.com. Fair launch on Base via Clanker. No team allocation. No presale. For everyone who believes quantum security matters before it is too late.
-          </p>
-          <div className="pqz-grid">
-            <div className="pqz-cell">
-              <div className="pqz-label">Token</div>
-              <div className="pqz-value pqz-value-green">$PQZ</div>
-            </div>
-            <div className="pqz-cell">
-              <div className="pqz-label">Chain</div>
-              <div className="pqz-value">Base</div>
-            </div>
-            <div className="pqz-cell">
-              <div className="pqz-label">Pair</div>
-              <div className="pqz-value">PQZ / WETH</div>
-            </div>
-            <div className="pqz-cell">
-              <div className="pqz-label">Launch</div>
-              <div className="pqz-value">Clanker · Uniswap V4</div>
-            </div>
-            <div className="pqz-cell" style={{gridColumn:"span 2"}}>
-              <div className="pqz-label">Contract Address</div>
-              <div className="pqz-value" style={{fontSize:"11px"}}>0xD42dCFbe233DA5B1FdC2420a0F042A5911771B07</div>
-            </div>
-          </div>
-          <div className="pqz-actions">
-            <a href="https://www.clanker.world/clanker/0xD42dCFbe233DA5B1FdC2420a0F042A5911771B07" target="_blank" rel="noreferrer" className="pqz-btn-primary">Buy $PQZ on Clanker →</a>
-            <a href="https://www.geckoterminal.com/base/pools/0xD42dCFbe233DA5B1FdC2420a0F042A5911771B07" target="_blank" rel="noreferrer" className="pqz-btn-secondary">View Chart →</a>
-            <a href="https://basescan.org/token/0xD42dCFbe233DA5B1FdC2420a0F042A5911771B07" target="_blank" rel="noreferrer" className="pqz-btn-secondary">Basescan →</a>
           </div>
         </div>
 
