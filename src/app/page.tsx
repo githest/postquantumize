@@ -154,6 +154,20 @@ const STYLE = `
 
   .err-box { border:1px solid rgba(255,59,59,0.3); background:var(--red-muted); padding:14px 18px; font-size:12px; color:var(--red); margin-top:16px; animation:fadeUp 0.3s ease; }
 
+  /* ── COUNTDOWN ── */
+  .countdown { border:1px solid var(--border); background:var(--surface); margin-bottom:28px; }
+  .countdown-head { padding:10px 20px; border-bottom:1px solid var(--border); background:var(--surface2); display:flex; align-items:center; justify-content:space-between; }
+  .countdown-label { font-size:9px; letter-spacing:0.3em; text-transform:uppercase; color:var(--text-dim); }
+  .countdown-source { font-size:9px; color:var(--text-dim); opacity:0.6; }
+  .countdown-body { padding:16px 20px; display:flex; align-items:center; gap:0; flex-wrap:wrap; }
+  .cd-unit { display:flex; flex-direction:column; align-items:center; flex:1; min-width:60px; }
+  .cd-num { font-family:var(--font-display); font-size:clamp(22px,4vw,36px); font-weight:800; color:var(--green); line-height:1; margin-bottom:4px; }
+  .cd-lbl { font-size:8px; letter-spacing:0.2em; text-transform:uppercase; color:var(--text-dim); }
+  .cd-sep { font-family:var(--font-display); font-size:28px; font-weight:800; color:var(--border); padding:0 4px; margin-bottom:16px; align-self:flex-start; padding-top:4px; }
+  .countdown-foot { padding:8px 20px; border-top:1px solid var(--border); font-size:10px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .countdown-foot a { color:var(--green-dim); text-decoration:none; }
+  .countdown-foot a:hover { color:var(--green); }
+
   /* ── RESOURCES ── */
   .res-section { border-top:1px solid var(--border); margin-top:56px; padding-top:40px; }
   .res-eyebrow { font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--text-dim); margin-bottom:16px; display:flex; align-items:center; gap:10px; }
@@ -324,6 +338,23 @@ export default function App() {
   const [apiErr,  setApiErr]  = useState("");
   const [news,    setNews]    = useState<any[]>(FALLBACK_RESOURCES);
   const [newsUpdated, setNewsUpdated] = useState<string>("");
+  const [countdown, setCountdown] = useState({ days:0, hours:0, mins:0, secs:0 });
+
+  useEffect(() => {
+    const target = new Date("2029-01-01T00:00:00Z").getTime();
+    const tick = () => {
+      const now  = Date.now();
+      const diff = Math.max(0, target - now);
+      const days  = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const mins  = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secs  = Math.floor((diff % (1000 * 60)) / 1000);
+      setCountdown({ days, hours, mins, secs });
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   useEffect(() => {
     fetch("/api/news")
@@ -483,6 +514,39 @@ export default function App() {
           <a href="/acquire" style={{fontFamily:"var(--font-mono)",fontSize:"10px",letterSpacing:"0.15em",textTransform:"uppercase",color:"var(--green)",textDecoration:"none",border:"1px solid var(--green-dim)",padding:"6px 14px",whiteSpace:"nowrap",transition:"all 0.2s",background:"var(--green-muted)"}}>
             Enquire →
           </a>
+        </div>
+
+        {/* ── COUNTDOWN ── */}
+        <div className="countdown">
+          <div className="countdown-head">
+            <span className="countdown-label">// Google PQC Deadline</span>
+            <span className="countdown-source">google.com · 2029 target</span>
+          </div>
+          <div className="countdown-body">
+            <div className="cd-unit">
+              <div className="cd-num">{String(countdown.days).padStart(3,"0")}</div>
+              <div className="cd-lbl">Days</div>
+            </div>
+            <div className="cd-sep">:</div>
+            <div className="cd-unit">
+              <div className="cd-num">{String(countdown.hours).padStart(2,"0")}</div>
+              <div className="cd-lbl">Hours</div>
+            </div>
+            <div className="cd-sep">:</div>
+            <div className="cd-unit">
+              <div className="cd-num">{String(countdown.mins).padStart(2,"0")}</div>
+              <div className="cd-lbl">Mins</div>
+            </div>
+            <div className="cd-sep">:</div>
+            <div className="cd-unit">
+              <div className="cd-num">{String(countdown.secs).padStart(2,"0")}</div>
+              <div className="cd-lbl">Secs</div>
+            </div>
+          </div>
+          <div className="countdown-foot">
+            <span>Google set a 2029 deadline to migrate its own infrastructure to Post-Quantum cryptography.</span>
+            <a href="https://research.google/blog/safeguarding-cryptocurrency-by-disclosing-quantum-vulnerabilities-responsibly/" target="_blank" rel="noreferrer">Read →</a>
+          </div>
         </div>
 
         {/* ── HEADER ── */}
