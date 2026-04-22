@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const STYLE = `
   @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap');
@@ -210,11 +210,11 @@ const SAMPLES: Record<string, {label:string; addr:string}[]> = {
   ],
 };
 
-const RESOURCES = [
+const FALLBACK_RESOURCES = [
   { tag:"breaking", tc:"res-tag-b", title:"Post-Quantum Ethereum — Official Roadmap", src:"pq.ethereum.org · 2026", url:"https://pq.ethereum.org/" },
   { tag:"research",  tc:"res-tag-r", title:"The Post-Quantum Divergence: Risk and Readiness Across Blockchains", src:"Etherealize · Apr 2, 2026", url:"https://x.com/Etherealize_io/status/2039731174738714876" },
-  { tag:"breaking", tc:"res-tag-b", title:"Grayscale: Quantum Breakthroughs Come in Sudden Leaps — Preparation Can't Be Delayed", src:"Grayscale Research · Apr 6, 2026", url:"https://x.com/Grayscale/status/2041204933501108698" },
-  { tag:"research", tc:"res-tag-r", title:"New Research: ECDLP-256 May Break With Under 500K Qubits", src:"Quantum AI Research · Mar 31, 2026", url:"https://research.google/blog/safeguarding-cryptocurrency-by-disclosing-quantum-vulnerabilities-responsibly/" },
+  { tag:"breaking", tc:"res-tag-b", title:"Grayscale: Quantum Breakthroughs Come in Sudden Leaps", src:"Grayscale Research · Apr 6, 2026", url:"https://x.com/Grayscale/status/2041204933501108698" },
+  { tag:"research", tc:"res-tag-r", title:"New Research: ECDLP-256 May Break With Under 500K Qubits", src:"Google Quantum AI · Mar 31, 2026", url:"https://research.google/blog/safeguarding-cryptocurrency-by-disclosing-quantum-vulnerabilities-responsibly/" },
   { tag:"breaking", tc:"res-tag-b", title:"Ethereum Foundation Makes PQ Security Top Priority", src:"The Quantum Insider · Jan 2026", url:"https://thequantuminsider.com/2026/01/26/ethereum-foundation-elevates-post-quantum-security-to-top-strategic-priority/" },
   { tag:"article",  tc:"res-tag-a", title:"NIST Post-Quantum Standards (FIPS 203/204/205)", src:"NIST · August 2024", url:"https://csrc.nist.gov/projects/post-quantum-cryptography" },
 ];
@@ -322,6 +322,20 @@ export default function App() {
   const [result,  setResult]  = useState<any>(null);
   const [meter,   setMeter]   = useState(0);
   const [apiErr,  setApiErr]  = useState("");
+  const [news,    setNews]    = useState<any[]>(FALLBACK_RESOURCES);
+  const [newsUpdated, setNewsUpdated] = useState<string>("");
+
+  useEffect(() => {
+    fetch("/api/news")
+      .then(r => r.json())
+      .then(d => {
+        if (d.articles && d.articles.length > 0) {
+          setNews(d.articles);
+          setNewsUpdated(d.updated);
+        }
+      })
+      .catch(() => {}); // silently fall back to static
+  }, []);
 
   const setStep = (id: string, st: string, det = "") => {
     setStepSt(s => ({...s,[id]:st}));
@@ -811,9 +825,16 @@ export default function App() {
 
         {/* ── RESOURCES ── */}
         <div className="res-section">
-          <div className="res-eyebrow">// Post-Quantum Intelligence Hub</div>
+          <div className="res-eyebrow" style={{display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:"8px"}}>
+            <span>// Post-Quantum Intelligence Hub</span>
+            {newsUpdated && (
+              <span style={{fontSize:"9px",color:"var(--text-dim)",letterSpacing:"0.1em"}}>
+                Updated {new Date(newsUpdated).toLocaleTimeString("en-US", {hour:"2-digit",minute:"2-digit"})}
+              </span>
+            )}
+          </div>
           <div className="res-grid">
-            {RESOURCES.map((r,i) => (
+            {news.map((r,i) => (
               <a key={i} href={r.url} target="_blank" rel="noreferrer" className="res-card">
                 <span className={`res-tag ${r.tc}`}>{r.tag}</span>
                 <div className="res-title">{r.title}</div>
