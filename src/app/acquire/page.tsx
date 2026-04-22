@@ -55,6 +55,9 @@ export default function AcquirePage() {
         .success-box p { font-size:12px; color:var(--green); line-height:1.8; }
         .footer { margin-top:48px; padding-top:18px; border-top:1px solid var(--border); font-size:10px; color:var(--text-dim); }
       `}</style>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet" />
       <div className="wrap">
         <div className="topbar">
           <a href="/" className="wordmark" style={{textDecoration:"none"}}>
