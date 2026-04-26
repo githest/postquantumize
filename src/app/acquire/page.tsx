@@ -136,7 +136,7 @@ export default function AcquirePage() {
           </div>
         </div>
         <div className="footer">
-          postquantumize.com · Built by <a href="https://twitter.com/james_base_eth" target="_blank" rel="noreferrer" style={{color:"var(--green-dim)"}}>@james_base_eth</a> · Educational only. Not financial advice.
+          postquantumize.com · Built by <a href="https://twitter.com/james_base_eth" target="_blank" rel="noreferrer" style={{color:"var(--green-dim)"}}>@james_base_eth</a> · <a href="https://twitter.com/postquantumize" target="_blank" rel="noreferrer" style={{color:"var(--green-dim)"}}>@postquantumize</a> · Educational only. Not financial advice.
         </div>
       </div>
     </>

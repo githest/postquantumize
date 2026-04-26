@@ -914,6 +914,8 @@ export default function App() {
           <span className="footer-note">
             Built by{" "}
             <a href="https://twitter.com/james_base_eth" target="_blank" rel="noreferrer" style={{color:"var(--green-dim)"}}>@james_base_eth</a>
+            {" · "}
+            <a href="https://twitter.com/postquantumize" target="_blank" rel="noreferrer" style={{color:"var(--green-dim)"}}>@postquantumize</a>
             {" · "}Educational only. Not financial advice.
           </span>
           <a href="/acquire" style={{fontSize:"10px",color:"var(--text-dim)",textDecoration:"none",letterSpacing:"0.1em",fontFamily:"var(--font-mono)",transition:"color 0.2s"}}>
