@@ -427,6 +427,18 @@ export default function App() {
         }
       } else {
         await delay(400);
+        // Same rules as the server (/api/scan), so bad input fails at this step
+        // instead of being marked as a detected address first.
+        const pattern =
+          chain==="BTC" ? /^(bc1[02-9ac-hj-np-z]{11,87}|[13][1-9A-HJ-NP-Za-km-z]{25,34})$/ :
+          chain==="SOL" ? /^[1-9A-HJ-NP-Za-km-z]{32,44}$/ :
+                          /^0x[0-9a-fA-F]{40}$/;
+        if (!pattern.test(addr)) {
+          setStep("format","active","Unrecognised address format");
+          setApiErr("That does not look like a valid address for this chain");
+          setPhase("error");
+          return;
+        }
         setStep("format","done",
           chain==="BTC" ? "Bitcoin address detected" :
           chain==="SOL" ? "Solana address detected" :
