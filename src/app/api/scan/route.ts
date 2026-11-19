@@ -171,13 +171,63 @@ async function fetchSOL(address: string): Promise<ScanResult> {
   };
 }
 
+// ── Input validation ──────────────────────────────────────
+// The address is placed inside third-party API URLs that carry our
+// Etherscan / Helius keys. Anything other than a well-formed address
+// could inject extra query params or path segments, so reject it.
+const ADDRESS_PATTERNS: Record<string, RegExp> = {
+  EVM: /^0x[0-9a-fA-F]{40}$/,
+  BTC: /^(bc1[02-9ac-hj-np-z]{11,87}|[13][1-9A-HJ-NP-Za-km-z]{25,34})$/,
+  SOL: /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
+};
+const VALID_CHAINS = new Set(["ETH", "BTC", "SOL", "L2"]);
+
+// ── Rate limiting ─────────────────────────────────────────
+// Best-effort, per server instance. It stops casual scripted abuse of our
+// API quotas; for hard guarantees add a Vercel WAF rate-limit rule too.
+const RATE_LIMIT = 10;            // requests
+const RATE_WINDOW_MS = 60_000;    // per minute, per IP
+const hits = new Map<string, { count: number; reset: number }>();
+
+function rateLimited(ip: string): boolean {
+  const now = Date.now();
+  if (hits.size > 10_000) {
+    for (const [k, v] of hits) if (v.reset < now) hits.delete(k);
+  }
+  const entry = hits.get(ip);
+  if (!entry || entry.reset < now) {
+    hits.set(ip, { count: 1, reset: now + RATE_WINDOW_MS });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > RATE_LIMIT;
+}
+
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+          || req.headers.get("x-real-ip") || "unknown";
+  if (rateLimited(ip)) {
+    return NextResponse.json({ success: false, error: "Too many scans. Please wait a minute." }, { status: 429 });
+  }
   try {
-    const { address, chain, l2Chain } = await req.json() as {
-      address: string; chain: "ETH" | "BTC" | "SOL" | "L2"; l2Chain?: string;
-    };
-    if (!address || !chain) {
-      return NextResponse.json({ success: false, error: "Missing address or chain" }, { status: 400 });
+    const body = await req.json().catch(() => null) as {
+      address?: unknown; chain?: unknown; l2Chain?: unknown;
+    } | null;
+    const address = typeof body?.address === "string" ? body.address.trim() : "";
+    const chain   = typeof body?.chain === "string" ? body.chain : "";
+    const l2Chain = typeof body?.l2Chain === "string" ? body.l2Chain : undefined;
+
+    if (!address || !VALID_CHAINS.has(chain)) {
+      return NextResponse.json({ success: false, error: "Missing or invalid address or chain" }, { status: 400 });
+    }
+    if (chain === "L2" && l2Chain !== undefined && !(l2Chain in EVM_CHAINS)) {
+      return NextResponse.json({ success: false, error: "Unsupported L2 chain" }, { status: 400 });
+    }
+    const pattern = chain === "BTC" ? ADDRESS_PATTERNS.BTC
+                  : chain === "SOL" ? ADDRESS_PATTERNS.SOL
+                  : ADDRESS_PATTERNS.EVM;
+    if (!pattern.test(address)) {
+      return NextResponse.json({ success: false, error: "That does not look like a valid address for this chain" }, { status: 400 });
     }
     let result: ScanResult;
     if      (chain === "BTC") result = await fetchBTC(address);
@@ -199,7 +249,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(result);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Scan failed";
-    return NextResponse.json({ success: false, error: message }, { status: 500 });
+    // Log details server-side only; never echo upstream errors to the client.
+    console.error("scan failed:", err instanceof Error ? err.message : err);
+    return NextResponse.json({ success: false, error: "Scan failed. Please try again." }, { status: 500 });
   }
 }

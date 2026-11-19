@@ -55,7 +55,8 @@ function extractItems(xml: string, sourceName: string): any[] {
     const source  = item.match(/<source[^>]*>(.*?)<\/source>/)?.[1] || sourceName;
     const cleanTitle = title.replace(/<[^>]+>/g, "").trim();
     const cleanDesc  = desc.replace(/<[^>]+>/g, "").trim();
-    if (cleanTitle && link && isRelevant(cleanTitle, cleanDesc)) {
+    // Only allow http(s) links: a feed item with a javascript: URL would run in our page.
+    if (cleanTitle && /^https?:\/\//i.test(link) && isRelevant(cleanTitle, cleanDesc)) {
       items.push({ title: cleanTitle, url: link, desc: cleanDesc.slice(0, 120), pubDate, source, date: parseDate(pubDate) });
     }
   }
